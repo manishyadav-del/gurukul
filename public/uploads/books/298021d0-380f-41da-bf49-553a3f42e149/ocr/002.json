@@ -1,0 +1,71 @@
+{
+  "pageNumber": 2,
+  "rawText": "Chapter 2: Planetary Influences\n\nThe Moon represents the mind while the Sun represents the soul.",
+  "cleanedText": "Chapter 2: Planetary Influences\n\nThe Moon represents the mind while the Sun represents the soul.",
+  "ocrConfidence": 0.95,
+  "language": "en",
+  "blocks": [
+    {
+      "text": "Chapter 2: Planetary Influences",
+      "confidence": 0.96,
+      "bbox": {
+        "x": 212,
+        "y": 247,
+        "width": 1044,
+        "height": 71
+      },
+      "order": 1,
+      "language": "Hindi"
+    },
+    {
+      "text": "The Moon represents the mind while the Sun represents the soul.",
+      "confidence": 0.96,
+      "bbox": {
+        "x": 210,
+        "y": 431,
+        "width": 1442,
+        "height": 46
+      },
+      "order": 2,
+      "language": "Hindi"
+    }
+  ],
+  "stats": {
+    "pageConfidence": 0.95,
+    "averageBlockConfidence": 0.96,
+    "minBlockConfidence": 0.96,
+    "level": "HIGH",
+    "requiresProofreading": false
+  },
+  "diagnostics": {
+    "attemptsCount": 3,
+    "winningRecipe": "Recipe1_StandardContrast_PSM3",
+    "candidates": [
+      {
+        "recipe": "Recipe1_StandardContrast_PSM3",
+        "confidence": 0.95,
+        "compositeScore": 0.782,
+        "reasons": [
+          "EXPECTED_INDIC_BUT_FOUND_LOW_DEVANAGARI"
+        ]
+      },
+      {
+        "recipe": "Recipe2_AdaptiveThreshold_Deskew_PSM3",
+        "confidence": 0.95,
+        "compositeScore": 0.782,
+        "reasons": [
+          "EXPECTED_INDIC_BUT_FOUND_LOW_DEVANAGARI"
+        ]
+      },
+      {
+        "recipe": "Recipe3_HighContrast_Deskew_PSM6",
+        "confidence": 0.95,
+        "compositeScore": 0.782,
+        "reasons": [
+          "EXPECTED_INDIC_BUT_FOUND_LOW_DEVANAGARI"
+        ]
+      }
+    ]
+  },
+  "ocrTriggerReason": "INDIC_TEXT_UNREADABLE_LOW_DEVANAGARI_RATIO"
+}

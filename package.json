@@ -1,0 +1,62 @@
+{
+  "name": "gurukul-astrology",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:clean": "node -e \"require('fs').rmSync('.next', { recursive: true, force: true })\" && next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "seed": "node scripts/seed.js",
+    "test:ingest": "node scripts/test-ingestion.js",
+    "test:phase1": "node scripts/test-phase1.js",
+    "test:phase2": "node scripts/test-phase2.js",
+    "test:phase3": "node scripts/test-phase3.js",
+    "test:phase4": "node scripts/test-phase4.js",
+    "test:phase5": "node scripts/test-phase5.js",
+    "test:phase6": "node scripts/test-phase6.js",
+    "test:phase7": "node scripts/test-phase7.js",
+    "test:phase8": "node scripts/test-phase8.js",
+    "test:phase9": "node scripts/test-phase9.js",
+    "test:phase10": "node scripts/test-phase10.js",
+    "test:auth": "node scripts/test-auth.js",
+    "test:daily": "node scripts/test-daily-astrology.js",
+    "test:ocr": "node scripts/test-ocr-accuracy.js",
+    "test:family": "node scripts/test-family.js",
+    "test:admin": "node scripts/test-admin.js",
+    "backup": "node scripts/backup.js",
+    "restore:verify": "node scripts/restore.js",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "worker": "node scripts/worker.js",
+    "worker:pm2": "pm2 start scripts/worker.js --name ocr-worker"
+  },
+  "imports": {
+    "@/*": "./*"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.10",
+    "@prisma/client": "^6.5.0",
+    "astronomy-engine": "^2.1.19",
+    "bcryptjs": "^3.0.3",
+    "lucide-react": "^1.53.0",
+    "next": "16.4.3",
+    "next-auth": "^4.24.15",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.4.299",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tesseract.js": "^7.0.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.0",
+    "postcss": "^8.5.29",
+    "prisma": "^6.5.0",
+    "tailwindcss": "^4.3.3"
+  }
+}

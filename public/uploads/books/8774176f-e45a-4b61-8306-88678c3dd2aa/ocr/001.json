@@ -1,0 +1,34 @@
+{
+  "pageNumber": 1,
+  "rawText": "Chapter 1: The Foundations of Vedic Astrology\nJupiter and Saturn form a powerful conjunction in the 9th house.",
+  "cleanedText": "Chapter 1: The Foundations of Vedic Astrology\nJupiter and Saturn form a powerful conjunction in the 9th house.",
+  "ocrConfidence": 1,
+  "language": "en",
+  "blocks": [
+    {
+      "text": "Chapter 1: The Foundations of Vedic Astrology",
+      "confidence": 1,
+      "bbox": {
+        "x": 50,
+        "y": 72,
+        "width": 374,
+        "height": 18
+      },
+      "order": 1,
+      "language": null
+    },
+    {
+      "text": "Jupiter and Saturn form a powerful conjunction in the 9th house.",
+      "confidence": 1,
+      "bbox": {
+        "x": 50,
+        "y": 112,
+        "width": 340,
+        "height": 12
+      },
+      "order": 2,
+      "language": null
+    }
+  ],
+  "stats": null
+}

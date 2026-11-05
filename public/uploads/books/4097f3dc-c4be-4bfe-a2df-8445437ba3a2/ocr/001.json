@@ -1,0 +1,35 @@
+{
+  "pageNumber": 1,
+  "pdfPageIndex": 0,
+  "classification": "DIGITAL",
+  "hasSelectableText": true,
+  "imageCount": 0,
+  "rawText": "Brihat Parashara Hora Shastra - Chapter 1\nVedic Astrology considers Jupiter, Sun, Moon, Mars, Mercury, Venus and Saturn as the core primary graha",
+  "cleanedText": "Brihat Parashara Hora Shastra - Chapter 1\nVedic Astrology considers Jupiter, Sun, Moon, Mars, Mercury, Venus and Saturn as the core primary graha",
+  "blocks": [
+    {
+      "text": "Brihat Parashara Hora Shastra - Chapter 1",
+      "confidence": 1,
+      "bbox": {
+        "x": 50,
+        "y": 72,
+        "width": 341,
+        "height": 18
+      },
+      "order": 1,
+      "language": null
+    },
+    {
+      "text": "Vedic Astrology considers Jupiter, Sun, Moon, Mars, Mercury, Venus and Saturn as the core primary graha",
+      "confidence": 1,
+      "bbox": {
+        "x": 50,
+        "y": 108,
+        "width": 568,
+        "height": 12
+      },
+      "order": 2,
+      "language": null
+    }
+  ]
+}

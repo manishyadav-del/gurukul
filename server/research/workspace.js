@@ -1,0 +1,289 @@
+/**
+ * Gurukul Research Workspace Service
+ * 
+ * Manages personal research collections, saved questions & answers with citations,
+ * bookmarked passages, and study notes with full provenance back to original books.
+ */
+
+import prisma from "../../lib/prisma.js";
+
+/**
+ * Retrieves all research collections for a user, with item counts and tags.
+ * 
+ * @param {string} userId
+ * @returns {Promise<Array<Object>>}
+ */
+export async function getUserResearchCollections(userId) {
+  if (!userId) throw new Error("Authentication required.");
+
+  const collections = await prisma.researchCollection.findMany({
+    where: { userId },
+    include: {
+      _count: {
+        select: { items: true },
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  return collections.map((c) => ({
+    id: c.id,
+    title: c.title,
+    description: c.description,
+    tags: c.tags || [],
+    itemCount: c._count.items,
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+  }));
+}
+
+/**
+ * Creates a new research collection.
+ * 
+ * @param {Object} params
+ * @returns {Promise<Object>}
+ */
+export async function createResearchCollection({
+  userId,
+  title,
+  description = null,
+  tags = [],
+}) {
+  if (!userId) throw new Error("Authentication required.");
+  if (!title || !title.trim()) throw new Error("Collection title is required.");
+
+  return await prisma.researchCollection.create({
+    data: {
+      userId,
+      title: title.trim(),
+      description: description ? description.trim() : null,
+      tags: Array.isArray(tags) ? tags.map((t) => String(t).trim()).filter(Boolean) : [],
+    },
+  });
+}
+
+/**
+ * Updates a research collection.
+ * 
+ * @param {Object} params
+ * @returns {Promise<Object>}
+ */
+export async function updateResearchCollection({
+  userId,
+  collectionId,
+  title,
+  description,
+  tags,
+}) {
+  if (!userId || !collectionId) throw new Error("userId and collectionId required.");
+
+  // Verify ownership
+  const existing = await prisma.researchCollection.findFirst({
+    where: { id: collectionId, userId },
+  });
+
+  if (!existing) throw new Error("Collection not found or access denied.");
+
+  const data = {};
+  if (typeof title === "string" && title.trim()) data.title = title.trim();
+  if (description !== undefined) data.description = description;
+  if (Array.isArray(tags)) data.tags = tags.map((t) => String(t).trim()).filter(Boolean);
+
+  return await prisma.researchCollection.update({
+    where: { id: collectionId },
+    data,
+  });
+}
+
+/**
+ * Deletes a research collection.
+ * 
+ * @param {Object} params
+ * @returns {Promise<Object>}
+ */
+export async function deleteResearchCollection({ userId, collectionId }) {
+  if (!userId || !collectionId) throw new Error("userId and collectionId required.");
+
+  const existing = await prisma.researchCollection.findFirst({
+    where: { id: collectionId, userId },
+  });
+
+  if (!existing) throw new Error("Collection not found or access denied.");
+
+  return await prisma.researchCollection.delete({
+    where: { id: collectionId },
+  });
+}
+
+/**
+ * Retrieves research items for a user, optionally filtered by collection or type.
+ * 
+ * @param {Object} params
+ * @returns {Promise<Array<Object>>}
+ */
+export async function getResearchItems({
+  userId,
+  collectionId = null,
+  itemType = null,
+  search = null,
+  limit = 50,
+}) {
+  if (!userId) throw new Error("Authentication required.");
+
+  const where = { userId };
+
+  if (collectionId) {
+    where.collectionId = collectionId;
+  }
+
+  if (itemType && itemType !== "ALL") {
+    where.itemType = itemType;
+  }
+
+  if (search && search.trim()) {
+    where.OR = [
+      { title: { contains: search.trim(), mode: "insensitive" } },
+      { query: { contains: search.trim(), mode: "insensitive" } },
+      { answer: { contains: search.trim(), mode: "insensitive" } },
+      { notes: { contains: search.trim(), mode: "insensitive" } },
+    ];
+  }
+
+  const items = await prisma.researchItem.findMany({
+    where,
+    include: {
+      collection: { select: { id: true, title: true } },
+      book: { select: { id: true, title: true, slug: true, author: true } },
+      chapter: { select: { id: true, title: true, slug: true } },
+      passage: { select: { id: true, text: true, sourcePage: true, ocrConfidence: true } },
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+
+  return items.map((item) => ({
+    id: item.id,
+    collectionId: item.collectionId,
+    collectionTitle: item.collection?.title || null,
+    itemType: item.itemType,
+    title: item.title,
+    query: item.query,
+    answer: item.answer,
+    notes: item.notes,
+    bookId: item.bookId,
+    bookTitle: item.book?.title || null,
+    bookSlug: item.book?.slug || null,
+    chapterTitle: item.chapter?.title || null,
+    pageNumber: item.pageNumber || item.passage?.sourcePage || null,
+    passageId: item.passageId,
+    citations: item.citations || [],
+    comparisonData: item.comparisonData || null,
+    metadata: item.metadata || {},
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  }));
+}
+
+/**
+ * Saves a new research item (question/answer, bookmarked passage, research note, or comparison).
+ * 
+ * @param {Object} params
+ * @returns {Promise<Object>}
+ */
+export async function saveResearchItem({
+  userId,
+  collectionId = null,
+  itemType = "QUERY_ANSWER",
+  title,
+  query = null,
+  answer = null,
+  notes = null,
+  bookId = null,
+  passageId = null,
+  chapterId = null,
+  pageNumber = null,
+  citations = [],
+  comparisonData = null,
+  metadata = {},
+}) {
+  if (!userId) throw new Error("Authentication required.");
+  if (!title || !title.trim()) throw new Error("Title is required for saving research item.");
+
+  // If collectionId provided, verify it belongs to this user
+  if (collectionId) {
+    const col = await prisma.researchCollection.findFirst({
+      where: { id: collectionId, userId },
+    });
+    if (!col) {
+      throw new Error("Specified research collection was not found.");
+    }
+  }
+
+  return await prisma.researchItem.create({
+    data: {
+      userId,
+      collectionId: collectionId || null,
+      itemType,
+      title: title.trim(),
+      query: query ? query.trim() : null,
+      answer: answer ? answer.trim() : null,
+      notes: notes ? notes.trim() : null,
+      bookId: bookId || null,
+      passageId: passageId || null,
+      chapterId: chapterId || null,
+      pageNumber: pageNumber ? parseInt(pageNumber, 10) : null,
+      citations: Array.isArray(citations) ? citations : [],
+      comparisonData: comparisonData || null,
+      metadata: metadata || {},
+    },
+    include: {
+      collection: { select: { id: true, title: true } },
+      book: { select: { id: true, title: true, slug: true } },
+    },
+  });
+}
+
+/**
+ * Deletes a research item.
+ * 
+ * @param {Object} params
+ * @returns {Promise<Object>}
+ */
+export async function deleteResearchItem({ userId, itemId }) {
+  if (!userId || !itemId) throw new Error("userId and itemId required.");
+
+  const item = await prisma.researchItem.findFirst({
+    where: { id: itemId, userId },
+  });
+
+  if (!item) throw new Error("Research item not found or access denied.");
+
+  return await prisma.researchItem.delete({
+    where: { id: itemId },
+  });
+}
+
+/**
+ * Fetches a complete past research session for resumption.
+ * 
+ * @param {string} userId
+ * @param {string} sessionId - ID of the research item representing the session
+ * @returns {Promise<Object>}
+ */
+export async function getResearchSession(userId, sessionId) {
+  if (!userId || !sessionId) throw new Error("userId and sessionId required.");
+
+  const session = await prisma.researchItem.findFirst({
+    where: { id: sessionId, userId },
+    include: {
+      collection: true,
+      book: true,
+      passage: true,
+      chapter: true,
+    },
+  });
+
+  if (!session) throw new Error("Research session not found.");
+
+  return session;
+}

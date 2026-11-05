@@ -1,0 +1,34 @@
+{
+  "pageNumber": 2,
+  "rawText": "Chapter 2: Planetary Influences\nThe Moon represents the mind while the Sun represents the soul.",
+  "cleanedText": "Chapter 2: Planetary Influences\nThe Moon represents the mind while the Sun represents the soul.",
+  "ocrConfidence": 1,
+  "language": "en",
+  "blocks": [
+    {
+      "text": "Chapter 2: Planetary Influences",
+      "confidence": 1,
+      "bbox": {
+        "x": 50,
+        "y": 72,
+        "width": 252,
+        "height": 18
+      },
+      "order": 1,
+      "language": null
+    },
+    {
+      "text": "The Moon represents the mind while the Sun represents the soul.",
+      "confidence": 1,
+      "bbox": {
+        "x": 50,
+        "y": 112,
+        "width": 347,
+        "height": 12
+      },
+      "order": 2,
+      "language": null
+    }
+  ],
+  "stats": null
+}

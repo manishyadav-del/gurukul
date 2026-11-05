@@ -1,0 +1,1113 @@
+"use client";
+
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import {
+  BookOpen,
+  Bookmark,
+  Clock,
+  Flame,
+  Sparkles,
+  Users,
+  Layers,
+  Search,
+  Filter,
+  ArrowRight,
+  RotateCcw,
+  BookMarked,
+  FileText,
+  Compass,
+  Star,
+  CheckCircle2,
+  ChevronRight,
+  SlidersHorizontal,
+  X,
+  Info,
+  ExternalLink,
+  Menu,
+  Sliders,
+  Eye,
+  Languages,
+  Network,
+} from "lucide-react";
+
+/**
+ * Determines a semantic category for a classical text based on title & description.
+ */
+function inferBookCategory(book) {
+  const text = `${book.title || ""} ${book.description || ""} ${book.script || ""}`.toLowerCase();
+
+  if (
+    text.includes("jyotish") ||
+    text.includes("astrology") ||
+    text.includes("hora") ||
+    text.includes("samhita") ||
+    text.includes("jataka") ||
+    text.includes("parashara") ||
+    text.includes("saravali") ||
+    text.includes("ग्रह") ||
+    text.includes("भाव") ||
+    text.includes("कुण्डली")
+  ) {
+    return "Astrology";
+  }
+
+  if (
+    text.includes("chikitsa") ||
+    text.includes("arogya") ||
+    text.includes("ayurveda") ||
+    text.includes("charaka") ||
+    text.includes("sushruta") ||
+    text.includes("चिकित्सा") ||
+    text.includes("आरोग्य")
+  ) {
+    return "Ayurveda";
+  }
+
+  if (
+    text.includes("veda") ||
+    text.includes("rig") ||
+    text.includes("yajur") ||
+    text.includes("sama") ||
+    text.includes("atharva") ||
+    text.includes("वेद") ||
+    text.includes("ऋग्वेद")
+  ) {
+    return "Vedas";
+  }
+
+  if (
+    text.includes("gita") ||
+    text.includes("upanishad") ||
+    text.includes("purana") ||
+    text.includes("sutra") ||
+    text.includes("niti") ||
+    text.includes("philosophy") ||
+    text.includes("उपनिषद") ||
+    text.includes("पुराण")
+  ) {
+    return "Philosophy";
+  }
+
+  return "Classics";
+}
+
+/**
+ * Procedural manuscript cover palette generator for books without an uploaded cover image.
+ */
+const COVER_PALETTES = [
+  { bg: "from-stone-900 via-[#13382c] to-[#0a1e17]", border: "border-[#d4a359]/40", text: "text-[#f3e5ab]", badge: "bg-[#d4a359]/20 text-[#f3e5ab]" },
+  { bg: "from-[#2b1810] via-[#4a2417] to-[#1c0d08]", border: "border-amber-500/40", text: "text-amber-100", badge: "bg-amber-500/20 text-amber-200" },
+  { bg: "from-[#111827] via-[#1e293b] to-[#0f172a]", border: "border-sky-400/30", text: "text-slate-100", badge: "bg-sky-400/20 text-sky-200" },
+  { bg: "from-[#2e1021] via-[#47122b] to-[#1c0612]", border: "border-rose-400/30", text: "text-rose-100", badge: "bg-rose-400/20 text-rose-200" },
+];
+
+function ManuscriptCoverCard({ book, index = 0, editionCount = 1 }) {
+  const palette = COVER_PALETTES[index % COVER_PALETTES.length];
+  const coverSrc = book.coverUrl || book.coverImageUrl;
+
+  if (coverSrc && coverSrc.startsWith("http")) {
+    return (
+      <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-stone-900 border border-stone-200/80 shadow-md group-hover:shadow-xl group-hover:scale-[1.02] transition-all">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={coverSrc}
+          alt={book.title}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
+        {editionCount > 1 && (
+          <span className="absolute top-2 right-2 bg-amber-500/90 text-stone-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-xs">
+            {editionCount} Editions
+          </span>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+          <span className="text-[11px] font-semibold text-amber-300 flex items-center gap-1">
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Open Reader</span>
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Authentic Vedic Manuscript Jacket Fallback
+  return (
+    <div
+      className={`relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-gradient-to-br ${palette.bg} border ${palette.border} p-3.5 flex flex-col justify-between shadow-md group-hover:shadow-xl group-hover:scale-[1.02] transition-all select-none`}
+    >
+      {/* Decorative Ornate Borders */}
+      <div className="absolute inset-1.5 border border-dashed border-amber-400/20 rounded-lg pointer-events-none" />
+
+      {/* Top Header */}
+      <div className="relative z-10 flex items-center justify-between">
+        <span className="text-[10px] tracking-wider uppercase font-semibold text-amber-300/80 font-mono">
+          {book.language || "Sanskrit"}
+        </span>
+        {editionCount > 1 ? (
+          <span className="bg-amber-400/20 border border-amber-300/40 text-amber-200 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+            {editionCount} Eds
+          </span>
+        ) : (
+          <span className="text-amber-400 font-serif text-sm">ॐ</span>
+        )}
+      </div>
+
+      {/* Center Title & Script */}
+      <div className="relative z-10 my-auto text-center px-1">
+        <div className="w-6 h-0.5 bg-amber-400/40 mx-auto mb-2 rounded-full" />
+        <h4 className={`font-serif font-bold text-xs sm:text-sm ${palette.text} line-clamp-3 leading-snug drop-shadow-sm`}>
+          {book.title}
+        </h4>
+        {book.script && (
+          <p className="text-[10px] text-amber-200/70 font-serif mt-1 italic line-clamp-1">
+            {book.script}
+          </p>
+        )}
+        <div className="w-6 h-0.5 bg-amber-400/40 mx-auto mt-2 rounded-full" />
+      </div>
+
+      {/* Bottom Footer Info */}
+      <div className="relative z-10 pt-2 border-t border-amber-400/15 flex items-center justify-between text-[10px] text-stone-300">
+        <span className="truncate max-w-[90px] text-stone-300/90 font-medium">
+          {book.author || "Classical Text"}
+        </span>
+        {book.pageCount ? (
+          <span className="font-mono text-amber-300/90">{book.pageCount}p</span>
+        ) : (
+          <span className="text-amber-300/80">Vedic Shastra</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Modal to display full book metadata, chapters count, reading modes, and navigation.
+ */
+function BookInfoModal({ book, onClose }) {
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  if (!book) return null;
+
+  const chaptersCount = book._count?.chapters ?? (book.chapters?.length || 0);
+  const passagesCount = book._count?.passages ?? 0;
+  const pagesCount = book.pageCount || book._count?.pages || 0;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="book-info-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={modalRef}
+        className="bg-[#fdfbf7] text-stone-900 w-full max-w-2xl rounded-3xl border border-[#ede5d6] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+      >
+        {/* Modal Header */}
+        <div className="bg-[#13382c] text-white p-5 sm:p-6 relative flex items-start justify-between">
+          <div className="space-y-1 pr-8">
+            <span className="inline-block text-[11px] font-semibold text-amber-300 uppercase tracking-wider font-mono">
+              {book.category || inferBookCategory(book)} • {book.language || "Sanskrit"}
+            </span>
+            <h2 id="book-info-title" className="text-xl sm:text-2xl font-serif font-bold text-white leading-tight">
+              {book.title}
+            </h2>
+            {book.author && (
+              <p className="text-xs sm:text-sm text-stone-300 font-medium">
+                Authored by {book.author}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close Book Details"
+            className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Modal Scrollable Body */}
+        <div className="p-6 space-y-6 overflow-y-auto">
+          {/* Key Manuscript Details Badges */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+            <div className="bg-[#faf7f0] rounded-xl border border-[#ede5d6] p-2.5">
+              <span className="text-[10px] text-stone-500 uppercase font-semibold block">Pages</span>
+              <span className="text-base font-bold font-mono text-stone-800">{pagesCount || "Continuous"}</span>
+            </div>
+            <div className="bg-[#faf7f0] rounded-xl border border-[#ede5d6] p-2.5">
+              <span className="text-[10px] text-stone-500 uppercase font-semibold block">Chapters</span>
+              <span className="text-base font-bold font-mono text-stone-800">{chaptersCount || "1 Work"}</span>
+            </div>
+            <div className="bg-[#faf7f0] rounded-xl border border-[#ede5d6] p-2.5">
+              <span className="text-[10px] text-stone-500 uppercase font-semibold block">Script</span>
+              <span className="text-xs font-semibold text-stone-800 block truncate mt-1">{book.script || "Devanagari"}</span>
+            </div>
+            <div className="bg-[#faf7f0] rounded-xl border border-[#ede5d6] p-2.5">
+              <span className="text-[10px] text-stone-500 uppercase font-semibold block">Publisher</span>
+              <span className="text-xs font-semibold text-stone-800 block truncate mt-1">{book.publisher || "Gurukul Press"}</span>
+            </div>
+          </div>
+
+          {/* Manuscript Description */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500">
+              Manuscript Overview & Scope
+            </h3>
+            <p className="text-sm text-stone-700 leading-relaxed bg-white rounded-2xl p-4 border border-[#ede5d6]">
+              {book.description ||
+                "Authentic classical Vedic Shastra preserved with verse precision, astrological principles, and commentary."}
+            </p>
+          </div>
+
+          {/* Reader Capabilities */}
+          <div className="space-y-2.5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500">
+              Supported Digital Reader Features
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs text-stone-700">
+              <div className="flex items-center gap-2 p-2.5 bg-[#faf7f0] rounded-xl border border-[#ede5d6]">
+                <CheckCircle2 className="w-4 h-4 text-[#13382c] shrink-0" />
+                <span>Original Manuscript High-Res PDF</span>
+              </div>
+              <div className="flex items-center gap-2 p-2.5 bg-[#faf7f0] rounded-xl border border-[#ede5d6]">
+                <CheckCircle2 className="w-4 h-4 text-[#13382c] shrink-0" />
+                <span>Side-by-Side Synchronized OCR</span>
+              </div>
+              <div className="flex items-center gap-2 p-2.5 bg-[#faf7f0] rounded-xl border border-[#ede5d6]">
+                <CheckCircle2 className="w-4 h-4 text-[#13382c] shrink-0" />
+                <span>Verse Explanation & Vedic Insights</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Actions Footer */}
+        <div className="p-4 sm:p-6 bg-stone-100/70 border-t border-[#ede5d6] flex flex-col sm:flex-row items-center justify-between gap-3">
+          <Link
+            href={`/library/${book.slug || book.id}`}
+            onClick={onClose}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-stone-300 text-stone-700 hover:text-stone-900 hover:bg-stone-200/60 font-semibold text-xs flex items-center justify-center gap-1.5 transition"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Table of Contents & Details</span>
+          </Link>
+
+          <Link
+            href={`/library/${book.slug || book.id}/pdf`}
+            onClick={onClose}
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#13382c] hover:bg-[#1a4a3b] text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Open in Digital Reader</span>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function DigitalLibraryView({
+  initialBooks = [],
+  initialProgress = [],
+  isAuthenticated = false,
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  // Read initial values from URL query parameters
+  const initialQ = searchParams?.get("q") || "";
+  const initialSidebar = searchParams?.get("sidebar") || "all-books";
+  const initialCategory = searchParams?.get("category") || "All";
+  const initialLanguage = searchParams?.get("lang") || "All";
+  const initialSort = searchParams?.get("sort") || "newest";
+  const initialDedup = searchParams?.get("dedup") !== "false";
+
+  // Interactive UI states
+  const [searchInputValue, setSearchInputValue] = useState(initialQ);
+  const [searchQuery, setSearchQuery] = useState(initialQ);
+  const [selectedSidebar, setSelectedSidebar] = useState(initialSidebar);
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [selectedLanguage, setSelectedLanguage] = useState(initialLanguage);
+  const [sortBy, setSortBy] = useState(initialSort);
+  const [deduplicateTitles, setDeduplicateTitles] = useState(initialDedup);
+
+  // Deep full-text search state
+  const [deepSearchEnabled, setDeepSearchEnabled] = useState(false);
+  const [deepSearchResults, setDeepSearchResults] = useState(null);
+  const [isDeepSearching, setIsDeepSearching] = useState(false);
+
+  // Modal inspection state
+  const [selectedBookForInfo, setSelectedBookForInfo] = useState(null);
+
+  // Mobile navigation drawer toggle
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Sync state to URL params cleanly
+  const updateUrlParams = useCallback(
+    (updates) => {
+      const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (!value || value === "All" || value === "all-books" || value === "newest" || (key === "dedup" && value === true)) {
+          params.delete(key);
+        } else {
+          params.set(key, String(value));
+        }
+      });
+
+      const queryString = params.toString();
+      const targetUrl = queryString ? `${pathname}?${queryString}` : pathname;
+      if (typeof window !== "undefined") {
+        window.history.replaceState(null, "", targetUrl);
+      }
+    },
+    [searchParams, pathname]
+  );
+
+  // Debounce search query update by 250ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInputValue);
+      updateUrlParams({ q: searchInputValue.trim() });
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchInputValue, updateUrlParams]);
+
+  // Deep search query runner when enabled
+  useEffect(() => {
+    if (!deepSearchEnabled || !searchQuery.trim()) {
+      setDeepSearchResults(null);
+      return;
+    }
+
+    let isSubscribed = true;
+    setIsDeepSearching(true);
+
+    fetch(`/api/search?q=${encodeURIComponent(searchQuery.trim())}&limit=20`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Search failed"))))
+      .then((data) => {
+        if (isSubscribed) {
+          setDeepSearchResults(data);
+          setIsDeepSearching(false);
+        }
+      })
+      .catch((err) => {
+        console.warn("Deep search request error:", err);
+        if (isSubscribed) {
+          setDeepSearchResults(null);
+          setIsDeepSearching(false);
+        }
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [deepSearchEnabled, searchQuery]);
+
+  const sidebarNav = [
+    { id: "all-books", label: "All Books", icon: BookOpen },
+    { id: "continue-reading", label: "Continue Reading", icon: Clock },
+    { id: "featured", label: "Featured Shastras", icon: Flame },
+    { id: "astrology", label: "Jyotish & Astrology", icon: Compass },
+    { id: "ayurveda", label: "Ayurveda & Health", icon: Layers },
+    { id: "philosophy", label: "Philosophy & Vedas", icon: Sparkles },
+  ];
+
+  const categories = [
+    "All",
+    "Astrology",
+    "Ayurveda",
+    "Philosophy",
+    "Vedas",
+    "Classics",
+  ];
+
+  const languages = ["All", "Sanskrit", "Hindi", "English"];
+
+  // Enrich real books with inferred categories
+  const booksWithCategory = useMemo(() => {
+    return initialBooks.map((b) => ({
+      ...b,
+      category: inferBookCategory(b),
+    }));
+  }, [initialBooks]);
+
+  // Group or deduplicate books by title if enabled
+  const processedBooks = useMemo(() => {
+    if (!deduplicateTitles) {
+      return booksWithCategory.map((b) => ({ ...b, editionCount: 1 }));
+    }
+
+    const titleMap = new Map();
+    booksWithCategory.forEach((b) => {
+      const normalizedTitle = (b.title || "").trim().toLowerCase();
+      if (!titleMap.has(normalizedTitle)) {
+        titleMap.set(normalizedTitle, []);
+      }
+      titleMap.get(normalizedTitle).push(b);
+    });
+
+    const deduped = [];
+    titleMap.forEach((editions) => {
+      // Pick the edition with the highest page count or most recent
+      const best = [...editions].sort(
+        (a, b) => (b.pageCount || 0) - (a.pageCount || 0) || new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+      )[0];
+      deduped.push({
+        ...best,
+        editionCount: editions.length,
+      });
+    });
+
+    return deduped;
+  }, [booksWithCategory, deduplicateTitles]);
+
+  // Featured books (curated by pageCount or classical significance)
+  const featuredBooks = useMemo(() => {
+    return [...processedBooks]
+      .filter((b) => (b.pageCount && b.pageCount >= 3) || b.author)
+      .slice(0, 4);
+  }, [processedBooks]);
+
+  // Filtered & Sorted books
+  const filteredBooks = useMemo(() => {
+    return processedBooks
+      .filter((book) => {
+        // Sidebar quick category filtering
+        if (selectedSidebar === "astrology" && book.category !== "Astrology") return false;
+        if (selectedSidebar === "ayurveda" && book.category !== "Ayurveda") return false;
+        if (selectedSidebar === "philosophy" && !["Philosophy", "Vedas"].includes(book.category)) return false;
+        if (selectedSidebar === "featured") {
+          const isFeatured = (book.pageCount && book.pageCount >= 3) || (book.author && book.author !== "Unknown");
+          if (!isFeatured) return false;
+        }
+
+        // Category filter
+        if (selectedCategory !== "All" && book.category !== selectedCategory) {
+          return false;
+        }
+
+        // Language filter
+        if (selectedLanguage !== "All") {
+          const bLang = (book.language || "").toLowerCase();
+          const targetLang = selectedLanguage.toLowerCase();
+          if (!bLang.includes(targetLang)) return false;
+        }
+
+        // Search Query filter
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase().trim();
+          const matchTitle = (book.title || "").toLowerCase().includes(q);
+          const matchAuthor = (book.author || "").toLowerCase().includes(q);
+          const matchDesc = (book.description || "").toLowerCase().includes(q);
+          const matchScript = (book.script || "").toLowerCase().includes(q);
+          const matchCategory = (book.category || "").toLowerCase().includes(q);
+
+          // If deep search has results, also match book IDs from deep results
+          const matchDeepBook = deepSearchResults?.passages?.some((p) => p.chapter?.bookId === book.id);
+
+          if (!matchTitle && !matchAuthor && !matchDesc && !matchScript && !matchCategory && !matchDeepBook) {
+            return false;
+          }
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === "title") {
+          return (a.title || "").localeCompare(b.title || "");
+        }
+        if (sortBy === "pages") {
+          return (b.pageCount || 0) - (a.pageCount || 0);
+        }
+        // Default newest
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      });
+  }, [processedBooks, selectedCategory, selectedLanguage, selectedSidebar, searchQuery, sortBy, deepSearchResults]);
+
+  // Handle sidebar navigation selection
+  const handleSelectSidebar = (id) => {
+    setSelectedSidebar(id);
+    setMobileSidebarOpen(false);
+
+    if (id === "all-books") {
+      setSelectedCategory("All");
+      updateUrlParams({ sidebar: null, category: null });
+    } else if (id === "astrology") {
+      setSelectedCategory("Astrology");
+      updateUrlParams({ sidebar: id, category: "Astrology" });
+    } else if (id === "ayurveda") {
+      setSelectedCategory("Ayurveda");
+      updateUrlParams({ sidebar: id, category: "Ayurveda" });
+    } else if (id === "philosophy") {
+      setSelectedCategory("Philosophy");
+      updateUrlParams({ sidebar: id, category: "Philosophy" });
+    } else {
+      updateUrlParams({ sidebar: id });
+    }
+  };
+
+  // Reset all search and filtering controls
+  const handleResetFilters = () => {
+    setSearchInputValue("");
+    setSearchQuery("");
+    setSelectedCategory("All");
+    setSelectedLanguage("All");
+    setSelectedSidebar("all-books");
+    setSortBy("newest");
+    setDeepSearchEnabled(false);
+    updateUrlParams({
+      q: null,
+      sidebar: null,
+      category: null,
+      lang: null,
+      sort: null,
+    });
+  };
+
+  return (
+    <div className="bg-[#fcfaf5] min-h-screen py-6 sm:py-8 text-stone-900">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Page Top Banner Header */}
+        <div className="bg-gradient-to-r from-[#13382c] via-[#1a4a3b] to-[#13382c] rounded-3xl p-6 sm:p-8 text-white shadow-lg border border-[#ede5d6] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+          <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="space-y-2 max-w-2xl relative z-10">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-300/30 text-amber-200 text-xs font-medium">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>गुरुकुल डिजिटल ग्रन्थागार • Classical Vedic Library</span>
+            </div>
+            <h1 className="text-2xl sm:text-4xl font-bold font-serif tracking-tight text-[#fdfbf7]">
+              Sacred Shastras & Digitized Manuscripts
+            </h1>
+            <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
+              Explore {processedBooks.length} classical works ({initialBooks.length} editions) digitized with dual-layer OCR, interactive Devanagari translation, chapter navigation, and dual-page manuscript reading.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 relative z-10 shrink-0">
+            <Link
+              href="/explore"
+              className="bg-emerald-950/80 hover:bg-emerald-900 text-amber-200 border border-amber-400/30 font-bold rounded-2xl px-4 py-3 text-center shadow-lg transition flex items-center gap-2 text-xs"
+            >
+              <Network className="w-4 h-4 text-amber-400" />
+              <span>Knowledge Graph</span>
+            </Link>
+
+            <Link
+              href="/research"
+              className="bg-amber-400 hover:bg-amber-300 text-[#13382c] font-bold rounded-2xl px-4 py-3 text-center shadow-lg transition flex items-center gap-2 text-xs"
+            >
+              <Sparkles className="w-4 h-4 text-[#13382c]" />
+              <span>AI Research Assistant</span>
+            </Link>
+
+            <div className="bg-black/25 backdrop-blur-md rounded-2xl p-3 border border-white/10 text-center min-w-[100px]">
+              <span className="block text-xl font-bold font-mono text-amber-300">
+                {processedBooks.length}
+              </span>
+              <span className="text-[11px] text-stone-300 uppercase tracking-wider font-medium">
+                {deduplicateTitles ? "Works" : "Editions"}
+              </span>
+            </div>
+            <div className="bg-black/25 backdrop-blur-md rounded-2xl p-3 border border-white/10 text-center min-w-[100px]">
+              <span className="block text-xl font-bold font-mono text-emerald-300">
+                100%
+              </span>
+              <span className="text-[11px] text-stone-300 uppercase tracking-wider font-medium">
+                OCR Enabled
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Continue Reading Shelf (Real authenticated user data) */}
+        {initialProgress.length > 0 && (selectedSidebar === "all-books" || selectedSidebar === "continue-reading") && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-700" />
+                <h2 className="text-lg font-bold font-serif text-stone-900">
+                  Continue Reading
+                </h2>
+              </div>
+              <span className="text-xs text-stone-500 font-medium">
+                {initialProgress.length} Books in Progress
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {initialProgress.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-2xl border border-[#ede5d6] p-4 shadow-2xs hover:shadow-md transition flex gap-3.5 items-center group"
+                >
+                  <div className="w-16 h-22 shrink-0">
+                    <ManuscriptCoverCard book={item.book} index={0} />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <h3 className="font-serif font-bold text-xs sm:text-sm text-stone-900 group-hover:text-[#13382c] truncate">
+                      {item.book.title}
+                    </h3>
+                    <p className="text-[11px] text-stone-500 truncate">
+                      {item.chapter
+                        ? `Chapter ${item.chapter.chapterNumber || 1}: ${item.chapter.title}`
+                        : "Manuscript Reader"}
+                    </p>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[10px] text-stone-500 font-mono">
+                        <span>Progress</span>
+                        <span>{Math.round(item.progress)}%</span>
+                      </div>
+                      <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-[#13382c] h-full rounded-full transition-all"
+                          style={{ width: `${Math.min(100, Math.max(5, item.progress))}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="pt-1 flex items-center justify-between">
+                      <Link
+                        href={`/library/${item.book.slug || item.book.id}/pdf`}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 hover:text-amber-900"
+                      >
+                        <span>Resume Reading</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </Link>
+                      <button
+                        onClick={() => setSelectedBookForInfo(item.book)}
+                        className="text-[10px] text-stone-400 hover:text-stone-700 font-medium underline"
+                      >
+                        Info
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Continue Reading Empty State when in Continue Reading sidebar */}
+        {selectedSidebar === "continue-reading" && initialProgress.length === 0 && (
+          <div className="bg-white rounded-3xl border border-[#ede5d6] p-8 sm:p-12 text-center space-y-4">
+            <Clock className="w-12 h-12 mx-auto text-amber-700/60" />
+            <div className="space-y-1 max-w-md mx-auto">
+              <h3 className="text-lg font-serif font-bold text-stone-900">
+                No Books in Progress Yet
+              </h3>
+              <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                {isAuthenticated
+                  ? "Select any classical Shastra from the library and start reading. Your progress, bookmarks, and last-read page will automatically be tracked here."
+                  : "Sign in to track your reading progress, bookmark sacred verses, and resume reading on any device."}
+              </p>
+            </div>
+            <button
+              onClick={() => handleSelectSidebar("all-books")}
+              className="px-5 py-2.5 rounded-xl bg-[#13382c] hover:bg-[#1a4a3b] text-white text-xs font-semibold shadow-xs transition inline-flex items-center gap-2 cursor-pointer"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Browse All Manuscripts</span>
+            </button>
+          </div>
+        )}
+
+        {/* Featured Shastras Shelf (when in all-books and no active search) */}
+        {featuredBooks.length > 0 && selectedSidebar === "all-books" && !searchQuery.trim() && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Flame className="w-4 h-4 text-amber-600" />
+                <h2 className="text-lg font-bold font-serif text-stone-900">
+                  Featured Classical Shastras
+                </h2>
+              </div>
+              <span className="text-xs text-stone-500 font-medium">Curated Editions</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {featuredBooks.map((book, idx) => (
+                <div
+                  key={book.id}
+                  className="bg-white rounded-2xl border border-[#ede5d6] p-4 shadow-2xs hover:shadow-md transition flex flex-col justify-between group"
+                >
+                  <div className="space-y-3">
+                    <div className="aspect-[4/3] w-full rounded-xl overflow-hidden bg-stone-900">
+                      <ManuscriptCoverCard book={book} index={idx} editionCount={book.editionCount} />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between text-[11px] text-stone-500 mb-1">
+                        <span className="font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md">
+                          {book.category}
+                        </span>
+                        {book.pageCount && (
+                          <span className="font-mono">{book.pageCount} Pages</span>
+                        )}
+                      </div>
+                      <h3 className="font-serif font-bold text-sm text-stone-900 group-hover:text-[#13382c] line-clamp-1">
+                        {book.title}
+                      </h3>
+                      <p className="text-xs text-stone-500 line-clamp-2 mt-1">
+                        {book.description || `Author: ${book.author || "Ancient Sage"}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-stone-100 flex items-center justify-between mt-3">
+                    <button
+                      onClick={() => setSelectedBookForInfo(book)}
+                      className="text-xs font-semibold text-stone-600 hover:text-stone-900 cursor-pointer"
+                    >
+                      Info
+                    </button>
+                    <Link
+                      href={`/library/${book.slug || book.id}/pdf`}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#13382c] hover:bg-[#1a4a3b] text-white text-xs font-semibold shadow-xs"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>Read PDF</span>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Mobile Navigation Toggle Button */}
+        <div className="lg:hidden flex items-center justify-between bg-white rounded-2xl p-3 border border-[#ede5d6]">
+          <span className="text-xs font-semibold text-stone-700">
+            Active: <strong className="text-[#13382c]">{sidebarNav.find((s) => s.id === selectedSidebar)?.label}</strong>
+          </span>
+          <button
+            onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#13382c] text-white text-xs font-semibold"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>Navigation & Filters</span>
+          </button>
+        </div>
+
+        {/* Main Library Exploration Grid & Filtering */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Category Sidebar */}
+          <aside
+            className={`lg:col-span-3 xl:col-span-2 space-y-3 ${
+              mobileSidebarOpen ? "block" : "hidden lg:block"
+            }`}
+          >
+            <div className="bg-white rounded-2xl border border-[#ede5d6] p-3 shadow-2xs space-y-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400 px-3 py-1.5 block">
+                Library Sections
+              </span>
+              {sidebarNav.map((item) => {
+                const Icon = item.icon;
+                const isActive = selectedSidebar === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleSelectSidebar(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition text-left cursor-pointer ${
+                      isActive
+                        ? "bg-[#13382c] text-white shadow-xs font-semibold"
+                        : "text-stone-700 hover:bg-[#faf7f0] hover:text-[#13382c]"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-4 h-4 ${
+                        isActive ? "text-[#d4a359]" : "text-stone-400"
+                      }`}
+                    />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Quick Stats Panel */}
+            <div className="bg-[#faf7f0] rounded-2xl border border-[#ede5d6] p-4 text-xs space-y-2 text-stone-600">
+              <span className="font-semibold text-stone-800 block">Digital Manuscripts</span>
+              <p className="text-[11px] text-stone-500 leading-relaxed">
+                All books are processed directly via Gurukul&apos;s OCR pipeline preserving Sanskrit Dandās (।, ॥), Vedic accents, and original page layouts.
+              </p>
+            </div>
+          </aside>
+
+          {/* Main Book Listing Area */}
+          <main className="lg:col-span-9 xl:col-span-10 space-y-5">
+            {/* Search, Language & Sort Controls */}
+            <div className="bg-white rounded-2xl border border-[#ede5d6] p-4 shadow-2xs space-y-4">
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                {/* Search Input Bar */}
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchInputValue}
+                    onChange={(e) => setSearchInputValue(e.target.value)}
+                    placeholder="Search by title, author, Sanskrit shloka term, or subject..."
+                    className="w-full bg-[#faf7f0] text-stone-900 placeholder-stone-400 text-xs sm:text-sm pl-10 pr-20 py-2.5 rounded-xl border border-[#ede5d6] focus:outline-hidden focus:ring-2 focus:ring-[#13382c]/30"
+                  />
+                  {searchInputValue && (
+                    <button
+                      onClick={() => setSearchInputValue("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs font-semibold cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Language Pills */}
+                <div className="inline-flex rounded-xl border border-[#ede5d6] bg-[#faf7f0] p-1 text-xs font-medium self-start sm:self-auto shrink-0">
+                  {languages.map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => {
+                        setSelectedLanguage(lang);
+                        updateUrlParams({ lang });
+                      }}
+                      className={`px-3 py-1.5 rounded-lg transition cursor-pointer text-xs ${
+                        selectedLanguage === lang
+                          ? "bg-[#13382c] text-white font-semibold shadow-xs"
+                          : "text-stone-600 hover:text-stone-900"
+                      }`}
+                    >
+                      {lang}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Category Chips & Sort Selector */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-stone-100">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {categories.map((cat) => {
+                    const isActive = selectedCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => {
+                          setSelectedCategory(cat);
+                          updateUrlParams({ category: cat });
+                        }}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
+                          isActive
+                            ? "bg-[#13382c] text-white font-semibold shadow-xs"
+                            : "bg-[#faf7f0] text-stone-700 hover:bg-[#ede5d6] border border-[#ede5d6]"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Options: Deduplication Toggle & Sort Dropdown */}
+                <div className="flex flex-wrap items-center gap-3 text-xs">
+                  {/* Distinct Titles vs All Editions Toggle */}
+                  <button
+                    onClick={() => {
+                      const next = !deduplicateTitles;
+                      setDeduplicateTitles(next);
+                      updateUrlParams({ dedup: next });
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition cursor-pointer ${
+                      deduplicateTitles
+                        ? "bg-amber-50 border-amber-300 text-amber-900 font-semibold"
+                        : "bg-[#faf7f0] border-[#ede5d6] text-stone-600"
+                    }`}
+                    title="Toggle grouping duplicate test edition entries"
+                  >
+                    <span>{deduplicateTitles ? "Unique Works" : "All Editions"}</span>
+                  </button>
+
+                  {/* Deep Full-Text Search Toggle */}
+                  {searchQuery.trim() && (
+                    <button
+                      onClick={() => setDeepSearchEnabled(!deepSearchEnabled)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition cursor-pointer ${
+                        deepSearchEnabled
+                          ? "bg-[#13382c] border-[#13382c] text-white font-semibold"
+                          : "bg-[#faf7f0] border-[#ede5d6] text-stone-600"
+                      }`}
+                      title="Search inside extracted Devanagari text & passages"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>{isDeepSearching ? "Searching..." : "Deep OCR Search"}</span>
+                    </button>
+                  )}
+
+                  {/* Sort Dropdown */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-stone-500 font-medium flex items-center gap-1">
+                      <SlidersHorizontal className="w-3 h-3" />
+                      <span>Sort:</span>
+                    </span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSortBy(val);
+                        updateUrlParams({ sort: val });
+                      }}
+                      className="bg-[#faf7f0] border border-[#ede5d6] rounded-lg px-2.5 py-1 text-xs text-stone-700 font-medium focus:outline-hidden cursor-pointer"
+                    >
+                      <option value="newest">Recently Added</option>
+                      <option value="title">Title (A-Z)</option>
+                      <option value="pages">Length (Pages)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Deep Search Findings Banner */}
+            {deepSearchEnabled && deepSearchResults?.passages && (
+              <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-3.5 text-xs text-amber-900 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-600" />
+                  <span>
+                    Deep OCR Search found <strong>{deepSearchResults.passages.length}</strong> matching Sanskrit passages across manuscripts.
+                  </span>
+                </div>
+                <button
+                  onClick={() => setDeepSearchEnabled(false)}
+                  className="text-stone-500 hover:text-stone-800 text-[11px] underline cursor-pointer"
+                >
+                  Disable Deep Search
+                </button>
+              </div>
+            )}
+
+            {/* Results Count Bar */}
+            <div className="flex items-center justify-between px-1 text-xs text-stone-500">
+              <span>
+                Showing <strong className="text-stone-800">{filteredBooks.length}</strong> of {processedBooks.length} {deduplicateTitles ? "classical works" : "manuscripts"}
+              </span>
+              {searchQuery && (
+                <span className="italic">
+                  Filtered by &ldquo;{searchQuery}&rdquo;
+                </span>
+              )}
+            </div>
+
+            {/* Empty State */}
+            {filteredBooks.length === 0 && (
+              <div className="bg-white rounded-2xl border border-[#ede5d6] p-12 text-center space-y-4">
+                <Compass className="w-12 h-12 mx-auto text-stone-400 opacity-60" />
+                <div className="space-y-1">
+                  <h3 className="text-base font-serif font-bold text-stone-800">
+                    No manuscripts match your query
+                  </h3>
+                  <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                    Try adjusting your search terms, clearing category filters, or selecting &ldquo;All Languages&rdquo;.
+                  </p>
+                </div>
+                <button
+                  onClick={handleResetFilters}
+                  className="px-4 py-2 bg-[#13382c] text-white rounded-xl text-xs font-semibold hover:bg-[#1a4a3b] transition inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset All Filters</span>
+                </button>
+              </div>
+            )}
+
+            {/* Books Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {filteredBooks.map((book, idx) => (
+                <div
+                  key={book.id}
+                  className="group flex flex-col bg-white rounded-2xl border border-[#ede5d6] p-2.5 shadow-2xs hover:shadow-md hover:border-[#d4a359] transition flex-1 justify-between"
+                >
+                  {/* Book Card Cover with Direct Reader Link */}
+                  <Link
+                    href={`/library/${book.slug || book.id}/pdf`}
+                    className="block cursor-pointer focus:outline-hidden"
+                    title={`Read ${book.title}`}
+                  >
+                    <ManuscriptCoverCard book={book} index={idx} editionCount={book.editionCount} />
+                  </Link>
+
+                  {/* Title & Metadata */}
+                  <div className="mt-2.5 flex-1 flex flex-col justify-between space-y-2">
+                    <div>
+                      <div className="flex items-center justify-between text-[10px] text-stone-400 mb-0.5">
+                        <span className="font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded">
+                          {book.category}
+                        </span>
+                        {book.pageCount && (
+                          <span className="font-mono text-[10px]">{book.pageCount}p</span>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => setSelectedBookForInfo(book)}
+                        className="text-left w-full block group-hover:text-[#13382c] transition cursor-pointer"
+                        title={book.title}
+                      >
+                        <h3 className="font-serif font-bold text-xs sm:text-sm text-stone-900 line-clamp-1 leading-snug">
+                          {book.title}
+                        </h3>
+                      </button>
+
+                      <p className="text-[11px] text-stone-500 font-medium line-clamp-1">
+                        {book.author || "Classical Author"}
+                      </p>
+                    </div>
+
+                    {/* Dual Action Buttons: Info Modal & Direct Reader */}
+                    <div className="pt-2 border-t border-stone-100 flex items-center justify-between gap-1 text-[11px]">
+                      <button
+                        onClick={() => setSelectedBookForInfo(book)}
+                        className="px-2 py-1 text-stone-500 hover:text-stone-800 transition font-medium cursor-pointer"
+                        aria-label={`View Info for ${book.title}`}
+                      >
+                        Info
+                      </button>
+                      <Link
+                        href={`/library/${book.slug || book.id}/pdf`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#13382c] hover:bg-[#1a4a3b] text-white font-semibold transition shadow-2xs"
+                        aria-label={`Read ${book.title}`}
+                      >
+                        <BookOpen className="w-3 h-3" />
+                        <span>Read</span>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </main>
+        </div>
+      </div>
+
+      {/* Book Quick Info Modal */}
+      {selectedBookForInfo && (
+        <BookInfoModal
+          book={selectedBookForInfo}
+          onClose={() => setSelectedBookForInfo(null)}
+        />
+      )}
+    </div>
+  );
+}

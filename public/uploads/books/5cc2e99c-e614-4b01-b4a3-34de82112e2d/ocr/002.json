@@ -1,0 +1,59 @@
+{
+  "pageNumber": 2,
+  "rawText": "wiper iivdilinllimhod- te Sunepearit he anid,",
+  "cleanedText": "wiper iivdilinllimhod- te Sunepearit he anid,",
+  "ocrConfidence": 0.36,
+  "language": "en",
+  "blocks": [
+    {
+      "text": "wiper iivdilinllimhod- te Sunepearit he anid,",
+      "confidence": 0.29,
+      "bbox": {
+        "x": 78,
+        "y": 2,
+        "width": 391,
+        "height": 18
+      },
+      "order": 1,
+      "language": "Hindi"
+    }
+  ],
+  "stats": {
+    "pageConfidence": 0.36,
+    "averageBlockConfidence": 0.29,
+    "minBlockConfidence": 0.29,
+    "level": "LOW",
+    "requiresProofreading": true
+  },
+  "diagnostics": {
+    "attemptsCount": 3,
+    "winningRecipe": "Recipe1_StandardContrast_PSM3",
+    "candidates": [
+      {
+        "recipe": "Recipe1_StandardContrast_PSM3",
+        "confidence": 0.36,
+        "compositeScore": 0.566,
+        "reasons": [
+          "EXPECTED_INDIC_BUT_FOUND_LOW_DEVANAGARI"
+        ]
+      },
+      {
+        "recipe": "Recipe2_AdaptiveThreshold_Deskew_PSM3",
+        "confidence": 0.36,
+        "compositeScore": 0.566,
+        "reasons": [
+          "EXPECTED_INDIC_BUT_FOUND_LOW_DEVANAGARI"
+        ]
+      },
+      {
+        "recipe": "Recipe3_HighContrast_Deskew_PSM6",
+        "confidence": 0.3,
+        "compositeScore": 0.527,
+        "reasons": [
+          "EXPECTED_INDIC_BUT_FOUND_LOW_DEVANAGARI"
+        ]
+      }
+    ]
+  },
+  "ocrTriggerReason": "INDIC_TEXT_UNREADABLE_LOW_DEVANAGARI_RATIO"
+}

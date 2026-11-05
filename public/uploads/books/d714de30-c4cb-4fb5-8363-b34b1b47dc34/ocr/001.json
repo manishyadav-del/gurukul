@@ -1,0 +1,28 @@
+{
+  "pageNumber": 1,
+  "rawText": "| Se es ¥ SHEE |\nARI are rC ET |\ncy Je “|\n| mrt rt vl met. Ae CXL N\né a Ll os = eG . हिन्दी\n| Vii\n| 3 ४\n3 5 = pF 3\nFOREN\nFE ABE 44\nमु व की; = 3 | हि ba. 3\n2 oh o 8 है की\na Ea 3 3\nहि i ; 4\nee 22. शी > 4\nWw अं 4 x\nEo eg on पे है cg wu\nYo oud NE AT\nआरोग्यनिधि - 2",
+  "cleanedText": "| Se es ¥ SHEE |\nARI are rC ET |\ncy Je “|\n| mrt rt vl met. Ae CXL N\né a Ll os = eG . हिन्दी\n| Vii\n| 3 ४\n3 5 = pF 3\nFOREN\nFE ABE 44\nमु व की; = 3 | हि ba. 3\n2 oh o 8 है की\na Ea 3 3\nहि i ; 4\nee 22. शी > 4\nWw अं 4 x\nEo eg on पे है cg wu\nYo oud NE AT\nआरोग्यनिधि - 2",
+  "ocrConfidence": 0.33,
+  "language": "mixed",
+  "blocks": [
+    {
+      "text": "| Se es ¥ SHEE |\nARI are rC ET |\ncy Je “|\n| mrt rt vl met. Ae CXL N\né a Ll os = eG . हिन्दी\n| Vii\n| 3 ४\n3 5 = pF 3\nFOREN\nFE ABE 44\nमु व की; = 3 | हि ba. 3\n2 oh o 8 है की\na Ea 3 3\nहि i ; 4\nee 22. शी > 4\nWw अं 4 x\nEo eg on पे है cg wu\nYo oud NE AT\nआरोग्यनिधि - 2",
+      "confidence": 0.32,
+      "bbox": {
+        "x": 428,
+        "y": 216,
+        "width": 980,
+        "height": 1662
+      },
+      "order": 1,
+      "language": "Hindi"
+    }
+  ],
+  "stats": {
+    "pageConfidence": 0.33,
+    "averageBlockConfidence": 0.32,
+    "minBlockConfidence": 0.32,
+    "level": "LOW",
+    "requiresProofreading": true
+  }
+}

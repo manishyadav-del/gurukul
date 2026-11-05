@@ -1,0 +1,66 @@
+name: Gurukul CI/CD Production Verification Pipeline
+
+on:
+  push:
+    branches: [main, master, staging]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  validate-and-build:
+    name: Lint, Test & Build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password123
+          POSTGRES_DB: astrology_gurukul_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Validate Prisma Schema
+        run: npx prisma validate
+
+      - name: Run Prisma Database Migrations
+        env:
+          DATABASE_URL: "postgresql://postgres:password123@localhost:5432/astrology_gurukul_test"
+        run: npx prisma db push --skip-generate
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Master E2E & Production Verification Suite
+        env:
+          DATABASE_URL: "postgresql://postgres:password123@localhost:5432/astrology_gurukul_test"
+          AUTH_SECRET: "gurukul-astrology-development-secret-key-32charsmin"
+          NEXTAUTH_URL: "http://localhost:3000"
+          STORAGE_PROVIDER: "local"
+        run: node scripts/test-production-e2e-suite.js
+
+      - name: Run Production Webpack Build
+        env:
+          DATABASE_URL: "postgresql://postgres:password123@localhost:5432/astrology_gurukul_test"
+          AUTH_SECRET: "gurukul-astrology-development-secret-key-32charsmin"
+          NEXTAUTH_URL: "http://localhost:3000"
+        run: npx next build --webpack

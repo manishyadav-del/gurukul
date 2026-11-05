@@ -1,0 +1,57 @@
+{
+  "pageNumber": 1,
+  "rawText": "परइिलीसजां Svrancdaiivenbimfrglivitie hho,",
+  "cleanedText": "परइिलीसजां Svrancdaiivenbimfrglivitie hho,",
+  "ocrConfidence": 0.07,
+  "language": "mixed",
+  "blocks": [
+    {
+      "text": "परइिलीसजां Svrancdaiivenbimfrglivitie hho,",
+      "confidence": 0,
+      "bbox": {
+        "x": 2,
+        "y": 2,
+        "width": 457,
+        "height": 20
+      },
+      "order": 1,
+      "language": "Hindi"
+    }
+  ],
+  "stats": {
+    "pageConfidence": 0.07,
+    "averageBlockConfidence": 0,
+    "minBlockConfidence": 0,
+    "level": "LOW",
+    "requiresProofreading": true
+  },
+  "diagnostics": {
+    "attemptsCount": 3,
+    "winningRecipe": "Recipe3_HighContrast_Deskew_PSM6",
+    "candidates": [
+      {
+        "recipe": "Recipe3_HighContrast_Deskew_PSM6",
+        "confidence": 0.07,
+        "compositeScore": 0.53,
+        "reasons": []
+      },
+      {
+        "recipe": "Recipe1_StandardContrast_PSM3",
+        "confidence": 0,
+        "compositeScore": 0.362,
+        "reasons": [
+          "SUSPICIOUSLY_SHORT_TEXT"
+        ]
+      },
+      {
+        "recipe": "Recipe2_AdaptiveThreshold_Deskew_PSM3",
+        "confidence": 0,
+        "compositeScore": 0.362,
+        "reasons": [
+          "SUSPICIOUSLY_SHORT_TEXT"
+        ]
+      }
+    ]
+  },
+  "ocrTriggerReason": "INDIC_TEXT_UNREADABLE_LOW_DEVANAGARI_RATIO"
+}

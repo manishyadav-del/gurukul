@@ -1,0 +1,1359 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  PROOFREADER
+  EXPERT
+  EDITOR
+  ADMIN
+  SUPER_ADMIN
+  CONTENT_ADMIN
+  OCR_MANAGER
+  ASTROLOGY_ADMIN
+  QUIZ_ADMIN
+  SUPPORT_ADMIN
+}
+
+enum BookStatus {
+  DRAFT
+  RECEIVED
+  PROCESSING
+  NEEDS_REVIEW
+  PROOFREAD
+  PENDING_APPROVAL
+  APPROVED
+  EXPERT_APPROVED
+  PUBLISHED
+  REJECTED
+  FAILED
+  ARCHIVED
+  UNPUBLISHED
+}
+
+enum ProcessingStatus {
+  QUEUED
+  ANALYZING
+  EXTRACTING
+  OCR_PROCESSING
+  CLEANING
+  STRUCTURING
+  IMPORTING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum PageProcessingMethod {
+  TEXT_EXTRACTION
+  OCR
+  MIXED
+}
+
+enum OcrErrorType {
+  LOW_CONFIDENCE
+  EMPTY_PAGE
+  OCR_FAILED
+  IMAGE_RENDER_FAILED
+  TEXT_EXTRACTION_FAILED
+  LANGUAGE_DETECTION_FAILED
+}
+
+enum PassageType {
+  PARAGRAPH
+  VERSE
+  HEADING
+  SUBHEADING
+  CHAPTER_TITLE
+  FOOTNOTE
+}
+
+enum ContentStatus {
+  DRAFT
+  REVIEWED
+  APPROVED
+  PUBLISHED
+}
+
+model User {
+  id                  String            @id @default(uuid())
+  name                String?
+  email               String            @unique
+  passwordHash        String?
+  role                Role              @default(USER)
+  locale              String            @default("en")
+  totalXp             Int               @default(0)
+  level               Int               @default(1)
+  currentStreak       Int               @default(0)
+  longestStreak       Int               @default(0)
+  lastActiveDate      String?
+  timezone            String?           @default("Asia/Kolkata")
+  isPublicLeaderboard Boolean           @default(true)
+  avatarUrl           String?
+  dateOfBirth         DateTime?
+  birthTime           String?
+  birthPlace          String?
+  gender              String?
+  isActive            Boolean           @default(true) @map("is_active")
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  aiConversations     AIConversation[]
+  birthProfiles       BirthProfile[]
+  bookmarks           Bookmark[]
+  notes               Note[]
+  quizAttempts        QuizAttempt[]
+  readingProgress     ReadingProgress[]
+  xpTransactions      XPTransaction[]
+  userAchievements    UserAchievement[]
+  ownedFamilyMembers  FamilyMember[]    @relation("FamilyOwner")
+  linkedFamilyMembers FamilyMember[]    @relation("LinkedFamilyMember")
+  sentInvitations     FamilyInvitation[] @relation("SentInvitations")
+  adminSessions       AdminSession[]
+  adminAuditLogs      AdminAuditLog[]   @relation("AdminAuditActor")
+  practiceLogs        UserPracticeLog[]
+  kundaliniProgress   UserKundaliniProgress[]
+  learningProgress    UserLearningProgress[]
+  savedConcepts       UserSavedConcept[]
+  dailyGoals          UserDailyGoal[]
+  recentTopics        UserRecentTopic[]
+  researchCollections ResearchCollection[]
+  researchItems       ResearchItem[]
+
+  @@index([totalXp])
+  @@index([isActive])
+  @@map("users")
+}
+
+model Book {
+  id               String           @id @default(uuid())
+  title            String
+  slug             String           @unique
+  description      String?
+  author           String?
+  publisher        String?
+  edition          String?
+  isbn             String?
+  language         String           @default("Hindi")
+  script           String?          @default("Devanagari")
+  originalFileName String?
+  originalFileUrl  String?
+  generatedPdfUrl  String?
+  coverImageUrl    String?
+  coverUrl         String?
+  sourcePdf        String?
+  pageCount        Int?
+  fileHash         String?
+  publicationReadiness Json?
+  searchIndexedAt  DateTime?
+  embeddingsIndexedAt DateTime?
+  status           BookStatus       @default(DRAFT)
+  processingStatus ProcessingStatus @default(QUEUED)
+  publishedAt      DateTime?
+  publishedBy      String?
+  publishedVersion Int              @default(1)
+  approvedAt       DateTime?
+  approvedBy       String?
+  rejectionReason  String?          @db.Text
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  chapters          Chapter[]
+  passages          Passage[]
+  pages             BookPage[]
+  pageScans         PageScan[]
+  readingProgress   ReadingProgress[]
+  quizzes           Quiz[]
+  notes             Note[]
+  ingestJobs        IngestJob[]
+  ocrErrors         OcrError[]
+  correctionHistory CorrectionHistory[]
+  savedConcepts     UserSavedConcept[]
+  researchItems     ResearchItem[]
+  knowledgeConcepts KnowledgeConcept[]
+  knowledgeRelationships KnowledgeRelationship[]
+  knowledgeExtractionJobs KnowledgeExtractionJob[]
+
+  @@index([status])
+  @@index([status, createdAt])
+  @@map("books")
+}
+
+model BookPage {
+  id               String               @id @default(uuid())
+  bookId           String
+  pageNumber       Int
+  pdfPageIndex     Int
+  imageUrl         String?
+  width            Int?
+  height           Int?
+  processingMethod     PageProcessingMethod @default(TEXT_EXTRACTION)
+  ocrEngine            String?              @default("tesseract")
+  rawText              String?              @db.Text
+  cleanedText          String?              @db.Text
+  proofreadText        String?              @db.Text
+  language             String?
+  ocrConfidence        Float?
+  ocrCompleted         Boolean              @default(false)
+  proofread            Boolean              @default(false)
+  reviewedBy           String?
+  reviewedAt           DateTime?
+  ocrProfile           String?              @default("standard")
+  qualityIssues        Json?
+  retryCount           Int                  @default(0)
+  processingDurationMs Int?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  book              Book                @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  ocrBlocks         OcrBlock[]
+  passages          Passage[]
+  ocrErrors         OcrError[]
+  correctionHistory CorrectionHistory[]
+
+  @@unique([bookId, pageNumber])
+  @@index([bookId, proofread])
+  @@index([bookId, ocrCompleted])
+  @@map("book_pages")
+}
+
+model OcrBlock {
+  id         String   @id @default(uuid())
+  pageId     String
+  text       String   @db.Text
+  confidence Float?
+  x          Float?
+  y          Float?
+  width      Float?
+  height     Float?
+  blockOrder Int
+  language   String?
+  createdAt  DateTime @default(now())
+
+  page BookPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@map("ocr_blocks")
+}
+
+model Chapter {
+  id            String        @id @default(uuid())
+  bookId        String
+  number        Int           @default(1)
+  chapterNumber Int           @default(1)
+  title         String
+  subheading    String?
+  slug          String
+  startPage     Int?
+  endPage       Int?
+  sortOrder     Int           @default(0)
+  description   String?
+  status        ContentStatus @default(DRAFT)
+  confidence    Float?
+  needsReview   Boolean       @default(false)
+  isPublished   Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
+
+  book            Book              @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  passages        Passage[]
+  readingProgress ReadingProgress[]
+  bookmarks       Bookmark[]
+  quizzes         Quiz[]
+  notes           Note[]
+  researchItems   ResearchItem[]
+
+  @@unique([bookId, slug])
+  @@index([bookId, sortOrder])
+  @@index([bookId, chapterNumber])
+  @@map("chapters")
+}
+
+model Passage {
+  id            String         @id @default(uuid())
+  bookId        String
+  chapterId     String?
+  pageId        String?
+  number        Int?
+  passageNumber Int?
+  sortOrder     Int            @default(0)
+  passageType   PassageType    @default(PARAGRAPH)
+  status        ContentStatus  @default(DRAFT)
+  needsReview   Boolean        @default(false)
+  confidence    Float?
+  text          String         @db.Text
+  rawText       String?        @db.Text
+  cleanedText   String?        @db.Text
+  proofreadText String?        @db.Text
+  previousText  String?        @db.Text
+  startOffset   Int?
+  endOffset     Int?
+  searchText    String?        @db.Text
+  sourcePage    Int?
+  endPage       Int?
+  ocrConfidence Float?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  book              Book                @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapter           Chapter?            @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  page              BookPage?           @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  aiSources         AISource[]
+  bookmarks         Bookmark[]
+  documentChunks    DocumentChunk[]
+  notes             Note[]
+  quizQuestions     QuizQuestion[]
+  readingProgress   ReadingProgress[]
+  correctionHistory CorrectionHistory[]
+  passageEmbeddings PassageEmbedding[]
+  savedConcepts     UserSavedConcept[]
+  researchItems     ResearchItem[]
+  knowledgeConcepts KnowledgeConcept[]
+  knowledgeRelationships KnowledgeRelationship[]
+  knowledgeExtractionJobs KnowledgeExtractionJob[]
+  conceptReferences PassageConceptReference[]
+
+  @@index([bookId, sortOrder])
+  @@index([bookId, chapterId])
+  @@index([sourcePage])
+  @@map("passages")
+}
+
+model IngestJob {
+  id              String           @id @default(uuid())
+  bookId          String
+  status          ProcessingStatus @default(QUEUED)
+  currentStep     String?
+  progress        Float            @default(0)
+  totalPages      Int              @default(0)
+  processedPages  Int              @default(0)
+  failedPages     Int              @default(0)
+  errorMessage    String?
+  priority        Int              @default(0)
+  attempts        Int              @default(0)
+  maxAttempts     Int              @default(3)
+  errorCategory   String?
+  lastHeartbeat   DateTime?
+  workerId        String?
+  checkpointPage  Int?             @default(0)
+  cancelRequested Boolean          @default(false)
+  stageHistory    Json?
+  options         Json?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([status, priority, createdAt])
+  @@index([lastHeartbeat])
+  @@map("ingest_jobs")
+}
+
+model OcrError {
+  id         String       @id @default(uuid())
+  bookId     String
+  pageId     String?
+  errorType  OcrErrorType
+  message    String
+  confidence Float?
+  resolved   Boolean      @default(false)
+  resolvedBy String?
+  resolvedAt DateTime?
+  createdAt  DateTime     @default(now())
+
+  book Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  page BookPage? @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([bookId, resolved])
+  @@map("ocr_errors")
+}
+
+model PageScan {
+  id         String   @id @default(uuid())
+  bookId     String
+  pageNo     Int
+  type       String?
+  imageKey   String?
+  rawText    String?
+  confidence Float?
+  reviewed   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  book       Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([bookId, pageNo])
+  @@map("page_scans")
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  passageId String
+  chapterId String?
+  note      String?
+  createdAt DateTime @default(now())
+
+  passage   Passage  @relation(fields: [passageId], references: [id], onDelete: Cascade)
+  chapter   Chapter? @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, passageId])
+  @@index([userId])
+  @@index([passageId])
+  @@map("bookmarks")
+}
+
+model Note {
+  id           String    @id @default(uuid())
+  userId       String
+  passageId    String
+  bookId       String?
+  chapterId    String?
+  body         String?   @db.Text
+  selectedText String?   @db.Text
+  color        String?   @default("amber")
+  isHighlight  Boolean   @default(false)
+  startOffset  Int?
+  endOffset    Int?
+  sourcePage   Int?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  passage      Passage   @relation(fields: [passageId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book         Book?     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapter      Chapter?  @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([passageId])
+  @@index([bookId])
+  @@index([chapterId])
+  @@map("notes")
+}
+
+model ReadingProgress {
+  id          String    @id @default(uuid())
+  userId      String
+  bookId      String
+  chapterId   String?
+  passageId   String?
+  pageNumber  Int?      @map("page_number")
+  progress    Float     @default(0)
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  lastReadAt  DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  book    Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapter Chapter?  @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  passage Passage?  @relation(fields: [passageId], references: [id], onDelete: SetNull)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+  @@index([userId])
+  @@index([bookId])
+  @@map("reading_progress")
+}
+
+model Quiz {
+  id          String         @id @default(uuid())
+  title       String
+  slug        String?        @unique
+  description String?
+  bookId      String?
+  chapterId   String?
+  topic       String?
+  difficulty  String         @default("MEDIUM")
+  isPublished Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  attempts    QuizAttempt[]
+  questions   QuizQuestion[]
+  book        Book?          @relation(fields: [bookId], references: [id], onDelete: SetNull)
+  chapter     Chapter?       @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+
+  @@index([bookId])
+  @@index([chapterId])
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id              String       @id @default(uuid())
+  quizId          String
+  question        String       @db.Text
+  explanation     String?      @db.Text
+  sourcePassageId String?
+  sourcePage      Int?
+  order           Int          @default(0)
+  difficulty      String?      @default("MEDIUM")
+  createdAt       DateTime     @default(now())
+  answers         QuizAnswer[]
+  options         QuizOption[]
+  quiz            Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  sourcePassage   Passage?     @relation(fields: [sourcePassageId], references: [id], onDelete: SetNull)
+
+  @@index([quizId])
+  @@map("quiz_questions")
+}
+
+model QuizOption {
+  id         String       @id @default(uuid())
+  questionId String
+  text       String       @db.Text
+  isCorrect  Boolean      @default(false)
+  order      Int          @default(0)
+  answers    QuizAnswer[]
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@map("quiz_options")
+}
+
+model QuizAttempt {
+  id             String       @id @default(uuid())
+  userId         String
+  quizId         String
+  score          Int          @default(0)
+  totalQuestions Int          @default(0)
+  percentage     Float        @default(0)
+  completedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  answers        QuizAnswer[]
+  quiz           Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([quizId])
+  @@map("quiz_attempts")
+}
+
+model QuizAnswer {
+  id               String        @id @default(uuid())
+  attemptId        String
+  questionId       String
+  selectedOptionId String?
+  isCorrect        Boolean       @default(false)
+  attempt          QuizAttempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question         QuizQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOption   QuizOption?   @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
+
+  @@index([attemptId])
+  @@index([questionId])
+  @@map("quiz_answers")
+}
+
+model AIConversation {
+  id             String        @id @default(uuid())
+  userId         String
+  birthProfileId String?
+  title          String
+  language       String        @default("en")
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  birthProfile   BirthProfile? @relation(fields: [birthProfileId], references: [id], onDelete: SetNull)
+  messages       AIMessage[]
+
+  @@index([userId])
+  @@index([birthProfileId])
+  @@map("ai_conversations")
+}
+
+model AIMessage {
+  id             String         @id @default(uuid())
+  conversationId String
+  role           String
+  content        String
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+  conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sources        AISource[]
+
+  @@index([conversationId])
+  @@map("ai_messages")
+}
+
+model DocumentChunk {
+  id         String   @id @default(uuid())
+  passageId  String
+  content    String
+  chunkIndex Int      @default(0)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  passage    Passage  @relation(fields: [passageId], references: [id], onDelete: Cascade)
+
+  @@map("document_chunks")
+}
+
+model AISource {
+  id           String    @id @default(uuid())
+  messageId    String
+  passageId    String?
+  relevance    Float?
+  bookTitle    String?
+  chapterTitle String?
+  pageNumber   Int?
+  citationText String?   @db.Text
+  readerUrl    String?
+  createdAt    DateTime  @default(now())
+  message      AIMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  passage      Passage?  @relation(fields: [passageId], references: [id], onDelete: SetNull)
+
+  @@index([messageId])
+  @@index([passageId])
+  @@map("ai_sources")
+}
+
+model BirthProfile {
+  id            String           @id @default(uuid())
+  userId        String
+  name          String
+  birthDate     DateTime
+  birthTime     String?
+  birthPlace    String?
+  latitude      Float?
+  longitude     Float?
+  timezone      String?
+  gender        String?
+  language      String?          @default("en")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  birthChart    BirthChart?
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversations AIConversation[]
+  familyMembers FamilyMember[]
+
+  @@index([userId])
+  @@map("birth_profiles")
+}
+
+model BirthChart {
+  id                String           @id @default(uuid())
+  birthProfileId    String           @unique
+  ascendant         Float?
+  lagnaSign         String?
+  lagnaDegree       Float?
+  ayanamsa          String?          @default("Lahiri")
+  ayanamsaValue     Float?
+  moonSign          String?
+  moonNakshatra     String?
+  moonPada          Int?
+  currentDasha      String?
+  dashaBalance      String?
+  calculationEngine String?          @default("astronomy-engine")
+  engineVersion     String?          @default("1.0.0")
+  chartData         Json?
+  createdAt         DateTime         @default(now())
+  birthProfile      BirthProfile     @relation(fields: [birthProfileId], references: [id], onDelete: Cascade)
+  planets           PlanetPosition[]
+
+  @@map("birth_charts")
+}
+
+model PlanetPosition {
+  id            String     @id @default(uuid())
+  chartId       String
+  planet        String
+  sign          String
+  house         Int
+  degree        Float
+  speed         Float?
+  nakshatra     String?
+  pada          Int?
+  retrograde    Boolean    @default(false)
+  signLord      String?
+  nakshatraLord String?
+  createdAt     DateTime   @default(now())
+  chart         BirthChart @relation(fields: [chartId], references: [id], onDelete: Cascade)
+
+  @@index([chartId])
+  @@map("planet_positions")
+}
+
+model CorrectionHistory {
+  id            String   @id @default(uuid())
+  bookId        String
+  pageId        String?
+  passageId     String?
+  chapterId     String?
+  previousText  String   @db.Text
+  correctedText String   @db.Text
+  correctedBy   String
+  createdAt     DateTime @default(now())
+
+  book    Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  page    BookPage? @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  passage Passage?  @relation(fields: [passageId], references: [id], onDelete: Cascade)
+
+  @@index([bookId])
+  @@index([passageId])
+  @@index([pageId])
+  @@map("correction_history")
+}
+
+model XPTransaction {
+  id          String   @id @default(uuid())
+  userId      String
+  amount      Int
+  actionType  String
+  referenceId String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, actionType, referenceId])
+  @@index([userId, createdAt])
+  @@index([actionType])
+  @@map("xp_transactions")
+}
+
+model Achievement {
+  id               String            @id @default(uuid())
+  code             String            @unique
+  title            String
+  description      String
+  badgeIcon        String            @default("award")
+  category         String            @default("LEARNING")
+  xpReward         Int               @default(50)
+  criteria         String?
+  createdAt        DateTime          @default(now())
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String      @id @default(uuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
+  @@map("user_achievements")
+}
+
+model PassageEmbedding {
+  id           String   @id @default(uuid())
+  passageId    String
+  model        String   @default("text-embedding-004")
+  version      String   @default("1.0.0")
+  dimensions   Int      @default(768)
+  vector       Float[]
+  contentHash  String
+  status       String   @default("COMPLETED")
+  errorMessage String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  passage Passage @relation(fields: [passageId], references: [id], onDelete: Cascade)
+
+  @@index([passageId])
+  @@index([model])
+  @@index([status])
+  @@index([contentHash])
+  @@map("passage_embeddings")
+}
+
+model EmbeddingBatchJob {
+  id             String    @id @default(uuid())
+  status         String    @default("QUEUED")
+  totalCount     Int       @default(0)
+  processedCount Int       @default(0)
+  failedCount    Int       @default(0)
+  model          String    @default("text-embedding-004")
+  errorMessage   String?
+  metadata       Json?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("embedding_batch_jobs")
+}
+
+model DailyAstrologyReport {
+  id                 String    @id @default(uuid())
+  userId             String    @default("general")
+  birthChartId       String?
+  reportDate         String    // YYYY-MM-DD in user's local timezone
+  latitude           Float
+  longitude          Float
+  timezone           String
+  language           String    @default("hi")
+  calculationVersion String    @default("v1")
+  panchangData       Json
+  reportContent      Json
+  sourceReferences   Json?
+  isPersonalized     Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([userId, reportDate, latitude, longitude, language, calculationVersion])
+  @@index([reportDate])
+  @@index([userId, reportDate])
+  @@map("daily_astrology_reports")
+}
+
+model FamilyMember {
+  id             String             @id @default(uuid())
+  ownerId        String
+  linkedUserId   String?
+  name           String
+  relationship   String             // PARENT, SPOUSE, CHILD, SIBLING, GRANDPARENT, OTHER
+  gender         String?
+  dateOfBirth    DateTime?
+  birthTime      String?
+  birthPlace     String?
+  latitude       Float?
+  longitude      Float?
+  timezone       String?            @default("Asia/Kolkata")
+  notes          String?            @db.Text
+  isArchived     Boolean            @default(false)
+  archivedAt     DateTime?
+  birthProfileId String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  owner          User               @relation("FamilyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  linkedUser     User?              @relation("LinkedFamilyMember", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  birthProfile   BirthProfile?      @relation(fields: [birthProfileId], references: [id], onDelete: SetNull)
+  invitations    FamilyInvitation[]
+
+  @@index([ownerId])
+  @@index([linkedUserId])
+  @@index([birthProfileId])
+  @@map("family_members")
+}
+
+model FamilyInvitation {
+  id              String        @id @default(uuid())
+  familyMemberId  String
+  inviterId       String
+  invitedEmail    String
+  tokenHash       String        @unique
+  status          String        @default("PENDING") // PENDING, ACCEPTED, EXPIRED, REVOKED
+  relationship    String?
+  personalMessage String?       @db.Text
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  familyMember    FamilyMember  @relation(fields: [familyMemberId], references: [id], onDelete: Cascade)
+  inviter         User          @relation("SentInvitations", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([familyMemberId])
+  @@index([inviterId])
+  @@index([invitedEmail])
+  @@index([status])
+  @@map("family_invitations")
+}
+
+model AdminSession {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  tokenHash     String    @unique @map("token_hash")
+  familyId      String    @map("family_id")
+  ipAddress     String?   @map("ip_address")
+  userAgent     String?   @map("user_agent")
+  isRevoked     Boolean   @default(false) @map("is_revoked")
+  revokedReason String?   @map("revoked_reason")
+  expiresAt     DateTime  @map("expires_at")
+  lastUsedAt    DateTime? @map("last_used_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([tokenHash])
+  @@map("admin_sessions")
+}
+
+model AdminAuditLog {
+  id             String    @id @default(uuid())
+  actorId        String?   @map("actor_id")
+  actorEmail     String    @map("actor_email")
+  actorRole      String    @map("actor_role")
+  action         String    // AUTH_LOGIN, AUTH_LOGOUT, USER_ROLE_CHANGE, USER_STATUS_CHANGE, BOOK_PUBLISH, OCR_RETRY, SETTINGS_UPDATE, INVITATION_REVOKE, etc.
+  targetResource String    @map("target_resource") // User, Book, BookPage, PlatformSettings, FamilyInvitation, Quiz, etc.
+  targetId       String?   @map("target_id")
+  status         String    @default("SUCCESS") // SUCCESS, FAILED, FORBIDDEN
+  details        Json?     // Structured metadata, changes, reasons
+  ipAddress      String?   @map("ip_address")
+  userAgent      String?   @map("user_agent")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  actor          User?     @relation("AdminAuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([action])
+  @@index([actorEmail])
+  @@index([targetResource])
+  @@index([createdAt])
+  @@map("admin_audit_logs")
+}
+
+model PlatformSettings {
+  id                         String   @id @default("default")
+  ayanamsa                   String   @default("LAHIRI") // LAHIRI, KP, RAMAN, TROPICAL
+  defaultChartStyle          String   @default("NORTH_INDIAN") // NORTH_INDIAN, SOUTH_INDIAN
+  panchangCalculationEngine String   @default("swiss-ephemeris-v1")
+  astroAiModel               String   @default("gemini-1.5-flash")
+  astroAiTemperature         Float    @default(0.7)
+  astroAiMaxTokens           Int      @default(1024)
+  astroAiSystemPrompt        String?  @db.Text
+  ocrDefaultEngine           String   @default("tesseract")
+  ocrLanguages               String   @default("hin+san+eng")
+  ocrDpi                     Int      @default(300)
+  registrationEnabled        Boolean  @default(true)
+  maintenanceMode            Boolean  @default(false)
+  allowFamilySharing         Boolean  @default(true)
+  updatedBy                  String?  @map("updated_by")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+  createdAt                  DateTime @default(now()) @map("created_at")
+
+  @@map("platform_settings")
+}
+
+model AdminNotification {
+  id        String   @id @default(uuid())
+  type      String   // OCR_FAILURE, SECURITY_ALERT, CONTENT_REVIEW, SYSTEM
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("admin_notifications")
+}
+
+model LearningModule {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  description String?  @db.Text
+  category    String   @default("ASTROLOGY_FOUNDATIONS")
+  difficulty  String   @default("BEGINNER") // BEGINNER, INTERMEDIATE, ADVANCED
+  isPublished Boolean  @default(false) @map("is_published")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  lessons     Lesson[]
+  userProgress UserLearningProgress[]
+
+  @@map("learning_modules")
+}
+
+model Lesson {
+  id          String         @id @default(uuid())
+  moduleId    String         @map("module_id")
+  title       String
+  slug        String
+  content     String         @db.Text
+  order       Int            @default(0)
+  durationMin Int            @default(10) @map("duration_min")
+  isPublished Boolean        @default(false) @map("is_published")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  module      LearningModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  userProgress UserLearningProgress[]
+
+  @@unique([moduleId, slug])
+  @@index([moduleId])
+  @@map("lessons")
+}
+
+model AdminActionItem {
+  id               String    @id @default(uuid())
+  severity         String    @default("WARNING") // CRITICAL, WARNING, INFO
+  category         String    // OCR_FAILURE, CONTENT_REVIEW, EMAIL_FAILURE, SECURITY_ALERT, AI_ERROR, SYSTEM_HEALTH
+  title            String
+  description      String?   @db.Text
+  affectedResource String    @map("affected_resource")
+  resourceId       String?   @map("resource_id")
+  actionUrl        String?   @map("action_url")
+  status           String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, DISMISSED
+  assignedTo       String?   @map("assigned_to")
+  resolvedAt       DateTime? @map("resolved_at")
+  resolvedBy       String?   @map("resolved_by")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([severity])
+  @@index([category])
+  @@map("admin_action_items")
+}
+
+// ============================================================================
+// DAILY VEDIC REMEDIES & SPIRITUAL GUIDANCE
+// ============================================================================
+
+model DailyRemedy {
+  id                        String            @id @default(uuid())
+  title                     String
+  slug                      String            @unique
+  category                  String            // PUJA, MANTRA, DAAN, MEDITATION, HABIT, AVOIDANCE
+  deity                     String?
+  planetaryAssociation      String?           // Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn, Rahu, Ketu, General
+  purpose                   String            @db.Text
+  materials                 String[]          @default([])
+  instructions              Json              // Array of steps or structured guidance
+  durationMinutes           Int?              @default(10)
+  suitableTiming            String?
+  sanskritMantra            String?           @db.Text
+  transliteration           String?           @db.Text
+  mantraMeaning             String?           @db.Text
+  tradition                 String            // e.g. Vedic, Tantric, Puranic, Smarta
+  sourceReference           String?           // Reference title, chapter, verse
+  sourceBookId              String?           // Optional link to Book
+  sourcePassageId           String?           // Optional link to Passage
+  costLevel                 String            @default("FREE") // FREE, LOW_COST, DONATION
+  accessibilityAlternatives String?           @db.Text
+  applicableWeekdays        Int[]             @default([]) // 0=Sunday, 1=Monday, ..., 6=Saturday
+  applicableTithis          String[]          @default([]) // e.g. ["Ekadashi", "Purnima", "Amavasya", "All"]
+  applicableNakshatras      String[]          @default([]) // e.g. ["Rohini", "All"]
+  isVerified                Boolean           @default(true)
+  status                    String            @default("PUBLISHED") // DRAFT, PUBLISHED, ARCHIVED
+  createdAt                 DateTime          @default(now()) @map("created_at")
+  updatedAt                 DateTime          @updatedAt @map("updated_at")
+
+  userPracticeLogs          UserPracticeLog[]
+
+  @@index([category, status])
+  @@index([planetaryAssociation])
+  @@map("daily_remedies")
+}
+
+model UserPracticeLog {
+  id           String       @id @default(uuid())
+  userId       String       @map("user_id")
+  remedyId     String       @map("remedy_id")
+  practiceDate String       @map("practice_date") // YYYY-MM-DD
+  completed    Boolean      @default(true)
+  bookmarked   Boolean      @default(false)
+  notes        String?      @db.Text
+  completedAt  DateTime?    @map("completed_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  remedy       DailyRemedy  @relation(fields: [remedyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, remedyId, practiceDate])
+  @@index([userId, practiceDate])
+  @@map("user_practice_logs")
+}
+
+// ============================================================================
+// KUNDALINI & CHAKRA EDUCATIONAL GUIDANCE
+// ============================================================================
+
+model KundaliniModule {
+  id                String                  @id @default(uuid())
+  slug              String                  @unique
+  title             String
+  subtitle          String?
+  level             String                  @default("BEGINNER") // BEGINNER, INTERMEDIATE, THEORY
+  chakraAssociation String?                 // Root, Sacral, SolarPlexus, Heart, Throat, ThirdEye, Crown, All
+  chakraElement     String?                 // Earth, Water, Fire, Air, Ether, Mind, Consciousness
+  bijaMantra        String?                 // LAM, VAM, RAM, YAM, HAM, OM
+  historicalContext String?                 @db.Text
+  practices         Json                    // Array of gentle guidance steps
+  safetyGuidance    String                  @db.Text
+  sourceReferences  Json?                   // Array of source citations
+  order             Int                     @default(0)
+  status            String                  @default("PUBLISHED") // DRAFT, PUBLISHED, ARCHIVED
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+
+  userProgress      UserKundaliniProgress[]
+
+  @@index([level, order])
+  @@map("kundalini_modules")
+}
+
+model UserKundaliniProgress {
+  id          String           @id @default(uuid())
+  userId      String           @map("user_id")
+  moduleId    String           @map("module_id")
+  completed   Boolean          @default(false)
+  bookmarked  Boolean          @default(false)
+  completedAt DateTime?        @map("completed_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module      KundaliniModule  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+  @@index([userId])
+  @@map("user_kundalini_progress")
+}
+
+// ============================================================================
+// STRUCTURED LEARNING & USER SAVED CONCEPTS
+// ============================================================================
+
+model UserLearningProgress {
+  id          String         @id @default(uuid())
+  userId      String         @map("user_id")
+  moduleId    String         @map("module_id")
+  lessonId    String?        @map("lesson_id")
+  completed   Boolean        @default(false)
+  completedAt DateTime?      @map("completed_at")
+  lastStudied DateTime       @default(now()) @map("last_studied")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module      LearningModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  lesson      Lesson?        @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, moduleId, lessonId])
+  @@index([userId])
+  @@index([moduleId])
+  @@map("user_learning_progress")
+}
+
+model UserSavedConcept {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  conceptKey      String    @map("concept_key")
+  term            String
+  sanskritTerm    String?   @map("sanskrit_term")
+  category        String    @default("GENERAL") // GRAHA, BHAVA, RASHI, NAKSHATRA, YOGA, PHILOSOPHY
+  meaning         String?   @db.Text
+  notes           String?   @db.Text
+  sourceBookId    String?   @map("source_book_id")
+  sourcePassageId String?   @map("source_passage_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceBook      Book?     @relation(fields: [sourceBookId], references: [id], onDelete: SetNull)
+  sourcePassage   Passage?  @relation(fields: [sourcePassageId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, conceptKey])
+  @@index([userId])
+  @@map("user_saved_concepts")
+}
+
+// ============================================================================
+// DAILY LEARNING GOALS & RECENT TOPICS
+// ============================================================================
+
+model UserDailyGoal {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  date          String    @map("date") // YYYY-MM-DD in user timezone
+  targetTopics  Int       @default(2) @map("target_topics")
+  studiedTopics Int       @default(0) @map("studied_topics")
+  targetPages   Int       @default(10) @map("target_pages")
+  readPages     Int       @default(0) @map("read_pages")
+  isCompleted   Boolean   @default(false) @map("is_completed")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("user_daily_goals")
+}
+
+model UserRecentTopic {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  topicKey   String   @map("topic_key")
+  title      String
+  category   String   // ASTROLOGY, KUNDALINI, LIBRARY
+  url        String
+  viewedAt   DateTime @default(now()) @map("viewed_at")
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topicKey])
+  @@index([userId, viewedAt])
+  @@map("user_recent_topics")
+}
+
+model ResearchCollection {
+  id          String         @id @default(uuid())
+  userId      String         @map("user_id")
+  title       String
+  description String?        @db.Text
+  tags        String[]       @default([])
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       ResearchItem[]
+
+  @@index([userId])
+  @@map("research_collections")
+}
+
+model ResearchItem {
+  id             String              @id @default(uuid())
+  userId         String              @map("user_id")
+  collectionId   String?             @map("collection_id")
+  itemType       String              @default("QUERY_ANSWER") // QUERY_ANSWER, SAVED_PASSAGE, RESEARCH_NOTE, SOURCE_COMPARISON
+  title          String
+  query          String?             @db.Text
+  answer         String?             @db.Text
+  notes          String?             @db.Text
+  bookId         String?             @map("book_id")
+  passageId      String?             @map("passage_id")
+  chapterId      String?             @map("chapter_id")
+  conceptId      String?             @map("concept_id")
+  pageNumber     Int?                @map("page_number")
+  citations      Json?
+  comparisonData Json?               @map("comparison_data")
+  metadata       Json?
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collection     ResearchCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  book           Book?               @relation(fields: [bookId], references: [id], onDelete: SetNull)
+  passage        Passage?            @relation(fields: [passageId], references: [id], onDelete: SetNull)
+  chapter        Chapter?            @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  concept        KnowledgeConcept?   @relation(fields: [conceptId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([collectionId])
+  @@index([itemType])
+  @@index([conceptId])
+  @@map("research_items")
+}
+
+model KnowledgeConcept {
+  id                  String                      @id @default(uuid())
+  slug                String                      @unique
+  name                String
+  sanskrit            String?
+  iast                String?
+  category            String                      @default("VEDIC_ASTROLOGY") // VEDIC_ASTROLOGY, KUNDALINI_SPIRITUALITY, DIGITAL_LIBRARY, PHILOSOPHY
+  subCategory         String?                     // GRAHA, BHAVA, RASHI, NAKSHATRA, PANCHANG, CHAKRA, TATTVA, NADI, GRANTHI, BOOK, CHAPTER
+  description         String?                     @db.Text
+  summary             String?                     @db.Text
+  traditionalMeaning  String?                     @db.Text
+  icon                String?
+  color               String?
+  metadata            Json?
+  status              String                      @default("APPROVED") // APPROVED, DRAFT, NEEDS_REVIEW
+  confidence          Float                       @default(1.0)
+  isClassical         Boolean                     @default(true)
+  sourceBookId        String?                     @map("source_book_id")
+  sourcePassageId     String?                     @map("source_passage_id")
+  createdAt           DateTime                    @default(now()) @map("created_at")
+  updatedAt           DateTime                    @updatedAt @map("updated_at")
+
+  sourceBook          Book?                       @relation(fields: [sourceBookId], references: [id], onDelete: SetNull)
+  sourcePassage       Passage?                    @relation(fields: [sourcePassageId], references: [id], onDelete: SetNull)
+  outgoingRelations   KnowledgeRelationship[]     @relation("SourceConcept")
+  incomingRelations   KnowledgeRelationship[]     @relation("TargetConcept")
+  passageReferences   PassageConceptReference[]
+  researchItems       ResearchItem[]
+
+  @@index([category])
+  @@index([subCategory])
+  @@index([status])
+  @@index([slug])
+  @@map("knowledge_concepts")
+}
+
+model KnowledgeRelationship {
+  id                  String            @id @default(uuid())
+  sourceConceptId     String            @map("source_concept_id")
+  targetConceptId     String            @map("target_concept_id")
+  relationshipType    String            @map("relationship_type") // PLANET_ASSOCIATED_WITH_RASHI, CHAKRA_ASSOCIATED_WITH_TATTVA, CONCEPT_RELATED_TO_CONCEPT, NAKSHATRA_BELONGS_TO_RASHI, PASSAGE_REFERENCES_CONCEPT, CONCEPT_REFERENCED_IN_BOOK, CONCEPT_HAS_CLASSICAL_REFERENCE, BOOK_CONTAINS_CHAPTER, CHAPTER_CONTAINS_PASSAGE
+  title               String?
+  description         String?           @db.Text
+  tradition           String?           @default("Parashari / Classical Vedic")
+  classicalSource     String?           @map("classical_source")
+  sourceBookId        String?           @map("source_book_id")
+  sourcePassageId     String?           @map("source_passage_id")
+  confidence          Float             @default(1.0)
+  status              String            @default("APPROVED") // APPROVED, AI_DISCOVERED, REJECTED, NEEDS_REVIEW
+  reviewedBy          String?           @map("reviewed_by")
+  reviewedAt          DateTime?         @map("reviewed_at")
+  isBidirectional     Boolean           @default(false) @map("is_bidirectional")
+  metadata            Json?
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  sourceConcept       KnowledgeConcept  @relation("SourceConcept", fields: [sourceConceptId], references: [id], onDelete: Cascade)
+  targetConcept       KnowledgeConcept  @relation("TargetConcept", fields: [targetConceptId], references: [id], onDelete: Cascade)
+  sourceBook          Book?             @relation(fields: [sourceBookId], references: [id], onDelete: SetNull)
+  sourcePassage       Passage?          @relation(fields: [sourcePassageId], references: [id], onDelete: SetNull)
+
+  @@unique([sourceConceptId, targetConceptId, relationshipType])
+  @@index([sourceConceptId])
+  @@index([targetConceptId])
+  @@index([relationshipType])
+  @@index([status])
+  @@map("knowledge_relationships")
+}
+
+model PassageConceptReference {
+  id         String            @id @default(uuid())
+  passageId  String            @map("passage_id")
+  conceptId  String            @map("concept_id")
+  relevance  Float             @default(1.0)
+  context    String?           @db.Text
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  passage    Passage           @relation(fields: [passageId], references: [id], onDelete: Cascade)
+  concept    KnowledgeConcept  @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+
+  @@unique([passageId, conceptId])
+  @@index([passageId])
+  @@index([conceptId])
+  @@map("passage_concept_references")
+}
+
+model KnowledgeExtractionJob {
+  id              String    @id @default(uuid())
+  bookId          String?   @map("book_id")
+  chapterId       String?   @map("chapter_id")
+  passageId       String?   @map("passage_id")
+  status          String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  method          String    @default("RULE_BASED_NLP") // RULE_BASED_NLP, AI_ASSISTED, MANUAL_SCHOLARLY
+  entitiesFound   Int       @default(0) @map("entities_found")
+  relationsFound  Int       @default(0) @map("relations_found")
+  error           String?   @db.Text
+  metadata        Json?
+  startedAt       DateTime  @default(now()) @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+
+  book            Book?     @relation(fields: [bookId], references: [id], onDelete: SetNull)
+  passage         Passage?  @relation(fields: [passageId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([bookId])
+  @@index([passageId])
+  @@map("knowledge_extraction_jobs")
+}
+
+
+
+
+
