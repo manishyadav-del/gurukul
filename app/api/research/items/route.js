@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from "@/server/security/authGuard";
 import {
   getResearchItems,
   saveResearchItem,
+  updateResearchItem,
   deleteResearchItem,
 } from "@/server/research/workspace";
 
@@ -82,6 +83,37 @@ export async function POST(request) {
     return NextResponse.json({ success: true, item });
   } catch (err) {
     console.error("POST /api/research/items error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+// PUT /api/research/items
+export async function PUT(request) {
+  try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { id, title, notes, collectionId, metadata } = body || {};
+
+    if (!id) {
+      return NextResponse.json({ error: "Item ID is required" }, { status: 400 });
+    }
+
+    const updated = await updateResearchItem({
+      userId: user.id,
+      itemId: id,
+      title,
+      notes,
+      collectionId,
+      metadata,
+    });
+
+    return NextResponse.json({ success: true, item: updated });
+  } catch (err) {
+    console.error("PUT /api/research/items error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

@@ -52,6 +52,36 @@ export async function POST(request) {
   }
 }
 
+// PUT /api/research/collections
+export async function PUT(request) {
+  try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { id, title, description, tags } = body || {};
+
+    if (!id) {
+      return NextResponse.json({ error: "Collection ID is required" }, { status: 400 });
+    }
+
+    const updated = await updateResearchCollection({
+      userId: user.id,
+      collectionId: id,
+      title,
+      description,
+      tags,
+    });
+
+    return NextResponse.json({ success: true, collection: updated });
+  } catch (err) {
+    console.error("PUT /api/research/collections error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
 // DELETE /api/research/collections?id=...
 export async function DELETE(request) {
   try {

@@ -25,10 +25,11 @@ export async function GET(request, { params }) {
     }
 
     const user = await getAuthenticatedUser(request);
+    const isPrivileged = user && canReviewBooks(user);
 
     // Public users can strictly only view pages from PUBLISHED books
     if (book.status !== "PUBLISHED") {
-      if (!user || !canReviewBooks(user)) {
+      if (!isPrivileged) {
         return NextResponse.json(
           { error: "Forbidden: Manuscript is unpublished" },
           { status: 403 }
@@ -37,6 +38,13 @@ export async function GET(request, { params }) {
     }
 
     const where = { bookId: book.id };
+
+    // Strict Gate: Unprivileged users can ONLY see included and published pages
+    if (!isPrivileged) {
+      where.isIncluded = true;
+      where.isPublished = true;
+    }
+
     if (pageNumber) {
       where.pageNumber = pageNumber;
     }
@@ -71,6 +79,11 @@ export async function GET(request, { params }) {
           cleanedText: true,
           proofreadText: true,
           imageUrl: true,
+          verificationStatus: true,
+          isIncluded: true,
+          isPublished: true,
+          exclusionReason: true,
+          verifiedAt: true,
         },
       }),
       prisma.bookPage.count({ where }),

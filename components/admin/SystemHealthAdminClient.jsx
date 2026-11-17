@@ -29,7 +29,8 @@ export default function SystemHealthAdminClient({ initialData }) {
       const res = await fetch("/api/admin/system-health?force=true");
       if (res.ok) {
         const json = await res.json();
-        setData(json);
+        const payload = json.data || json;
+        setData(payload);
         setMessage("Diagnostic probe finished successfully.");
         setTimeout(() => setMessage(""), 3000);
       }
@@ -235,10 +236,52 @@ export default function SystemHealthAdminClient({ initialData }) {
                 {services.searchAndAi?.backlogCount || 0} records
               </span>
             </div>
+            {services.searchAndAi?.embeddingJobs && (
+              <div className="flex justify-between pt-1 border-t border-stone-100">
+                <span>Batch Jobs (Q/P/F):</span>
+                <span className="font-mono text-[11px] text-stone-700">
+                  {services.searchAndAi.embeddingJobs.queued} / {services.searchAndAi.embeddingJobs.processing} / {services.searchAndAi.embeddingJobs.failed}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* 5. Storage I/O */}
+        {/* 5. Knowledge Graph Pipeline */}
+        <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-stone-900 text-sm flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-700" />
+              <span>Knowledge Graph Extraction</span>
+            </span>
+            <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+              services.knowledgeJobs?.status === "WARNING"
+                ? "bg-amber-100 text-amber-800"
+                : "bg-emerald-100 text-emerald-800"
+            }`}>
+              {services.knowledgeJobs?.status || "HEALTHY"}
+            </span>
+          </div>
+
+          <div className="space-y-1.5 text-xs text-stone-600 pt-1">
+            <div className="flex justify-between">
+              <span>Pending Jobs:</span>
+              <strong className="font-mono">{services.knowledgeJobs?.pending || 0}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>In Processing:</span>
+              <strong className="font-mono">{services.knowledgeJobs?.processing || 0}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>Completed / Failed:</span>
+              <span className={`font-mono font-bold ${services.knowledgeJobs?.failed > 0 ? "text-rose-700" : "text-stone-500"}`}>
+                {services.knowledgeJobs?.completed || 0} completed / {services.knowledgeJobs?.failed || 0} failed
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 6. Storage I/O */}
         <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-2xs space-y-3">
           <div className="flex items-center justify-between">
             <span className="font-bold text-stone-900 text-sm flex items-center gap-2">
@@ -298,6 +341,48 @@ export default function SystemHealthAdminClient({ initialData }) {
           </div>
         </div>
       </div>
+
+      {/* Operational Alerts & Incident Monitoring */}
+      {data.alerts && data.alerts.length > 0 && (
+        <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold font-serif text-stone-900 text-sm flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <span>Recent Operational Alerts & Incidents ({data.alerts.length})</span>
+            </h3>
+            <span className="text-[11px] text-stone-500">Auto-clearing buffer (last 100 alerts)</span>
+          </div>
+
+          <div className="divide-y divide-stone-100 max-h-64 overflow-y-auto pr-1">
+            {data.alerts.map((alert) => (
+              <div key={alert.id} className="py-2.5 flex items-start justify-between gap-3 text-xs">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      alert.severity === "CRITICAL"
+                        ? "bg-rose-100 text-rose-800"
+                        : alert.severity === "ERROR"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-amber-100 text-amber-800"
+                    }`}>
+                      {alert.category}
+                    </span>
+                    <span className="font-medium text-stone-800">{alert.message}</span>
+                  </div>
+                  {alert.metadata && Object.keys(alert.metadata).length > 0 && (
+                    <p className="text-[11px] text-stone-500 font-mono">
+                      {JSON.stringify(alert.metadata).slice(0, 120)}
+                    </p>
+                  )}
+                </div>
+                <span className="text-[10px] text-stone-400 font-mono shrink-0">
+                  {new Date(alert.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

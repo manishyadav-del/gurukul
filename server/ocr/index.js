@@ -12,11 +12,15 @@ export {
   toGrayscale,
   binarize,
   reduceNoiseGentle,
+  removeScanBorders,
+  normalizeResolution,
 } from "./preprocess.js";
 export {
   analyzeTextLayer,
   detectKrutiDevEncoding,
   convertKrutiDevToUnicode,
+  detectChanakyaEncoding,
+  convertChanakyaToUnicode,
 } from "./textLayerAnalyzer.js";
 export {
   runOcrWithQualityRetries,
@@ -28,3 +32,15 @@ export {
   normalizePaddleOcrResult,
   PADDLE_OCR_CAPABILITIES,
 } from "./paddleOcrAdapter.js";
+export {
+  correctDevanagariOcrText,
+  normalizeDevanagariDandas,
+  normalizeSanskritVisarga,
+  normalizeSanskritAvagraha,
+  normalizeDevanagariVowelsAndMatras,
+} from "./devanagariCorrections.js";
+export {
+  validateDevanagariText,
+  calculateSanskritTextQuality,
+  DEVANAGARI_ISSUE_CODES,
+} from "./sanskritValidator.js";

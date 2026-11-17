@@ -1,36 +1,42 @@
 /**
- * Text Layer & Corrupted Text Analyzer
+ * server/ocr/textLayerAnalyzer.js
+ * 
+ * Advanced Text Layer & Legacy DTP Font Analyzer
  * 
  * Inspects PDF selectable text layers before OCR to decide whether:
- * 1. The page has clean, readable digital text that can be extracted directly.
- * 2. The page is a scan with no text layer (requires OCR).
- * 3. The page has a corrupted text layer (replacement chars, mojibake, Kruti Dev) requiring OCR or font conversion.
- * 4. The page has an unusable or gibberish text layer.
+ * 1. The page has clean, readable digital Unicode text that can be used directly (skipping OCR).
+ * 2. The page is a scan with no text layer (routes to OCR with EMPTY_OR_MINIMAL_TEXT_LAYER).
+ * 3. The page has a legacy DTP font (Kruti Dev 010, Chanakya, Walkman-Chanakya, Shusha, DevLys)
+ *    and converts it to canonical Unicode Devanagari, or routes to OCR if conversion is unverified.
+ * 4. The page has a corrupted text layer (mojibake, PUA characters, replacement \uFFFD) requiring OCR.
  * 
+ * Uses multi-heuristic confidence scoring rather than single-metric decisions.
  * JavaScript only.
  */
 
-// Common Kruti Dev 010 specific character patterns & words that do not occur in normal English
-const KRUTI_DEV_PATTERNS = [
-  /\b[A-Za-z0-9]+\b/g,
-  /\b(?:esa|gS|Fkk|dk|dh|ds|dks|fn;k|fd;k|ugha|rkfd|Hkh|vkSj|gksrk|Fks|gSa|le;)\b/,
-  /(?:[dD][kK]|[xX][kK]|[pP][kK]|[tT][kK]|[bB][kK]|[eE][kK]|[yY][kK])/
+// ============================================================================
+// 1. Kruti Dev 010 Mapping & Signatures
+// ============================================================================
+const KRUTI_DEV_KEYWORDS = [
+  "esa", "gS", "Fkk", "dk", "dh", "ds", "dks", "fn;k", "fd;k", "ugha",
+  "rkfd", "Hkh", "vkSj", "gksrk", "Fks", "gSa", "le;", ";g", "og", "rFkk",
+  "tc", "rc", "xq#", "xzg", "'kfu", "izHkko", "jkf'k", "Hkkx", "lw;Z",
 ];
 
-/**
- * Kruti Dev 010 to Unicode Devanagari Character Mapping
- * Ordered strictly from LONGEST sequences to SHORTEST to prevent substring collision!
- */
 const KRUTI_TO_UNICODE_MAP = [
-  // Multi-character compounds and words
+  // Multi-character compounds and words (longest first!)
   { kd: "xq#", uni: "गुरु" },
   { kd: "xzg", uni: "ग्रह" },
+  { kd: "izHkko", uni: "प्रभाव" },
   { kd: "iz", uni: "प्र" },
   { kd: "D;", uni: "क्क" },
   { kd: "D=", uni: "क्त" },
   { kd: "dZ", uni: "र्क" },
   { kd: "AA", uni: "॥" },
   { kd: "=\"k", uni: "त्र" },
+  { kd: "J", uni: "श्र" },
+  { kd: "K", uni: "ज्ञ" },
+  { kd: "N", uni: "छ" },
 
   // Standalone multi-character vowels
   { kd: "vkS", uni: "औ" },
@@ -82,6 +88,10 @@ const KRUTI_TO_UNICODE_MAP = [
   { kd: "M+", uni: "ड़" },
   { kd: "<+", uni: "ढ़" },
   { kd: "Q+", uni: "फ़" },
+  { kd: "d+", uni: "क़" },
+  { kd: "[k+", uni: "ख़" },
+  { kd: "x+", uni: "ग़" },
+  { kd: "t+", uni: "ज़" },
 
   // Single matras
   { kd: "S", uni: "ै" },
@@ -97,15 +107,15 @@ const KRUTI_TO_UNICODE_MAP = [
   { kd: "¡", uni: "ँ" },
   { kd: "A", uni: "।" },
 
-  // Special characters
+  // Special characters & ra-kars
   { kd: "Z", uni: "र्" },
   { kd: "z", uni: "्र" },
+  { kd: "~", uni: "्" },
 
   // Single consonants
   { kd: "d", uni: "क" },
   { kd: "x", uni: "ग" },
   { kd: "p", uni: "च" },
-  { kd: "N", uni: "छ" },
   { kd: "t", uni: "ज" },
   { kd: ">", uni: "झ" },
   { kd: "¥", uni: "ञ" },
@@ -126,7 +136,6 @@ const KRUTI_TO_UNICODE_MAP = [
   { kd: "o", uni: "व" },
   { kd: "l", uni: "स" },
   { kd: "g", uni: "ह" },
-  { kd: "K", uni: "ज्ञ" },
 
   // Single vowels
   { kd: "v", uni: "अ" },
@@ -161,7 +170,6 @@ export function convertKrutiDevToUnicode(text) {
 
   // Handle 'f' (choti-i matra): in Kruti Dev it is typed BEFORE the consonant,
   // but in Unicode it goes AFTER the consonant.
-  // Match 'f' followed by one or more consonant characters (e.g. fu -> uf -> नि)
   modified = modified.replace(/f([a-zA-Z\?\[\.\/\"\'{]+)/g, "$1f");
 
   // Replace each mapped token in order of length
@@ -170,7 +178,7 @@ export function convertKrutiDevToUnicode(text) {
     modified = modified.split(item.kd).join(item.uni);
   }
 
-  // Finally replace 'f' with 'ि' (choti-i matra)
+  // Replace 'f' with 'ि' (choti-i matra)
   modified = modified.split("f").join("ि");
 
   // Reph (Z) positioning fix: convert 'र्' before consonant
@@ -190,16 +198,21 @@ export function detectKrutiDevEncoding(text) {
     return { isKrutiDev: false, confidence: 0 };
   }
 
-  const words = text.split(/\s+/).filter(w => w.length > 0);
+  const words = text.split(/\s+/).filter((w) => w.length > 0);
   if (words.length === 0) return { isKrutiDev: false, confidence: 0 };
 
-  const krutiDevWordMatches = text.match(/\b(?:esa|gS|Fkk|dk|dh|ds|dks|fn;k|fd;k|ugha|rkfd|Hkh|vkSj|gksrk|Fks|gSa|le;|;g|og|rFkk|tc|rc|xq#|xzg|'kfu|izHkko)\b/g) || [];
+  const krutiDevRegex = new RegExp(`\\b(?:${KRUTI_DEV_KEYWORDS.join("|")})\\b`, "g");
+  const krutiDevWordMatches = text.match(krutiDevRegex) || [];
   const matchRatio = krutiDevWordMatches.length / Math.max(1, words.length);
 
-  const englishWordMatches = text.match(/\b(?:the|and|is|in|to|of|that|it|for|on|with|as|this|was|at|by)\b/gi) || [];
+  const englishWordMatches =
+    text.match(/\b(?:the|and|is|in|to|of|that|it|for|on|with|as|this|was|at|by|from|or|an)\b/gi) || [];
   const englishRatio = englishWordMatches.length / Math.max(1, words.length);
 
-  const isKrutiDev = (krutiDevWordMatches.length >= 2 && englishRatio < 0.05) || (matchRatio > 0.10 && englishRatio < 0.05);
+  const isKrutiDev =
+    (krutiDevWordMatches.length >= 2 && englishRatio < 0.05) ||
+    (matchRatio > 0.08 && englishRatio < 0.05);
+
   const confidence = isKrutiDev ? Math.min(0.98, Math.max(0.65, matchRatio * 4)) : 0;
 
   return {
@@ -207,6 +220,138 @@ export function detectKrutiDevEncoding(text) {
     confidence: Math.round(confidence * 100) / 100,
   };
 }
+
+// ============================================================================
+// 2. Chanakya & Walkman-Chanakya Legacy DTP Font Mapping & Signatures
+// ============================================================================
+const CHANAKYA_KEYWORDS = [
+  "à", "ò", "ù", "ñ", "Ø", "æ", "ç", "é", "ë", "ì", "î", "ï", "ð", "ñ",
+  "ò", "ó", "ô", "õ", "ö", "÷", "ø", "ù", "ú", "û", "ü", "ý", "þ", "ÿ",
+];
+
+const CHANAKYA_TO_UNICODE_MAP = [
+  // Multi-character compounds
+  { ch: "¬", uni: "अ" },
+  { ch: "A", uni: "आ" },
+  { ch: "§", uni: "ई" },
+  { ch: "C", uni: "उ" },
+  { ch: "E", uni: "ए" },
+  { ch: "G", uni: "ऐ" },
+  { ch: "I", uni: "ओ" },
+  { ch: "K", uni: "औ" },
+  { ch: "Ø", uni: "क्ष्" },
+  { ch: "Ù", uni: "ज्ञ" },
+  { ch: "˜", uni: "त्र" },
+  { ch: "Í", uni: "र्" },
+  { ch: "ñ", uni: "त्" },
+  { ch: "ò", uni: "ो" },
+  { ch: "ó", uni: "ौ" },
+  { ch: "à", uni: "ा" },
+  { ch: "á", uni: "ि" },
+  { ch: "â", uni: "ी" },
+  { ch: "ã", uni: "ु" },
+  { ch: "ä", uni: "ू" },
+  { ch: "å", uni: "ृ" },
+  { ch: "æ", uni: "े" },
+  { ch: "ç", uni: "ै" },
+  { ch: "è", uni: "ं" },
+  { ch: "é", uni: "ः" },
+  { ch: "ê", uni: "ँ" },
+  { ch: "ë", uni: "्" },
+  { ch: "Ú", uni: "।" },
+  { ch: "Û", uni: "॥" },
+  { ch: "®", uni: "रु" },
+  { ch: "¯", uni: "रू" },
+
+  // Base Consonants
+  { ch: "d", uni: "क" },
+  { ch: "e", uni: "ख" },
+  { ch: "f", uni: "ग" },
+  { ch: "g", uni: "घ" },
+  { ch: "h", uni: "ङ" },
+  { ch: "i", uni: "च" },
+  { ch: "j", uni: "छ" },
+  { ch: "k", uni: "ज" },
+  { ch: "l", uni: "झ" },
+  { ch: "m", uni: "ञ" },
+  { ch: "n", uni: "ट" },
+  { ch: "o", uni: "ठ" },
+  { ch: "p", uni: "ड" },
+  { ch: "q", uni: "ढ" },
+  { ch: "r", uni: "ण" },
+  { ch: "s", uni: "त" },
+  { ch: "t", uni: "थ" },
+  { ch: "u", uni: "द" },
+  { ch: "v", uni: "ध" },
+  { ch: "w", uni: "न" },
+  { ch: "x", uni: "प" },
+  { ch: "y", uni: "फ" },
+  { ch: "z", uni: "ब" },
+  { ch: "{", uni: "भ" },
+  { ch: "|", uni: "म" },
+  { ch: "}", uni: "य" },
+  { ch: "~", uni: "र" },
+  { ch: "", uni: "ल" },
+  { ch: "", uni: "व" },
+  { ch: "", uni: "श" },
+  { ch: "", uni: "ष" },
+  { ch: "", uni: "स" },
+  { ch: "", uni: "ह" },
+];
+
+/**
+ * Converts Chanakya / Walkman-Chanakya encoded text to Unicode Devanagari.
+ * 
+ * @param {string} text
+ * @returns {string}
+ */
+export function convertChanakyaToUnicode(text) {
+  if (!text || typeof text !== "string") return "";
+
+  let modified = text;
+
+  // Reposition pre-matra 'á' (choti-i)
+  modified = modified.replace(/á([a-zA-Z\u0080-\u00FF]+)/g, "$1á");
+
+  for (const item of CHANAKYA_TO_UNICODE_MAP) {
+    if (item.ch === "á") continue;
+    modified = modified.split(item.ch).join(item.uni);
+  }
+
+  modified = modified.split("á").join("ि");
+
+  return modified.normalize("NFC");
+}
+
+/**
+ * Detects if a string is encoded in Chanakya font.
+ * 
+ * @param {string} text
+ * @returns {{ isChanakya: boolean, confidence: number }}
+ */
+export function detectChanakyaEncoding(text) {
+  if (!text || text.length < 15) {
+    return { isChanakya: false, confidence: 0 };
+  }
+
+  const highAsciiMatches = text.match(/[\u00A0-\u00FF]/g) || [];
+  const highAsciiRatio = highAsciiMatches.length / text.length;
+
+  const chanakyaCharMatches = text.match(/[àòùñØæçéëÚÛ]/g) || [];
+  const chanakyaRatio = chanakyaCharMatches.length / text.length;
+
+  const isChanakya = chanakyaCharMatches.length >= 3 || (chanakyaRatio > 0.05 && highAsciiRatio > 0.08);
+  const confidence = isChanakya ? Math.min(0.96, Math.max(0.60, chanakyaRatio * 6)) : 0;
+
+  return {
+    isChanakya,
+    confidence: Math.round(confidence * 100) / 100,
+  };
+}
+
+// ============================================================================
+// 3. Multi-Heuristic Text Layer Analyzer
+// ============================================================================
 
 /**
  * Analyzes a page's selectable text layer for corruption, encoding issues, and readability.
@@ -218,7 +363,7 @@ export function detectKrutiDevEncoding(text) {
  * @param {number} [options.imageCount=0] - Number of embedded raster images on page
  * @returns {{
  *   hasUsableText: boolean,
- *   classification: 'DIGITAL' | 'SCANNED' | 'CORRUPTED',
+ *   classification: 'DIGITAL' | 'SCANNED' | 'CORRUPTED' | 'MIXED',
  *   ocrTriggerReason: string | null,
  *   isLegacyFont: boolean,
  *   detectedFont: string | null,
@@ -228,7 +373,8 @@ export function detectKrutiDevEncoding(text) {
  *     puaCharCount: number,
  *     devanagariRatio: number,
  *     asciiRatio: number,
- *     controlCharRatio: number
+ *     controlCharRatio: number,
+ *     confidenceScore: number
  *   },
  *   convertedText: string | null
  * }}
@@ -246,7 +392,7 @@ export function analyzeTextLayer(rawText, options = {}) {
     targetLang === "sanskrit" ||
     options.script === "Devanagari";
 
-  // 1. Empty or virtually empty text layer
+  // 1. Empty or virtually empty text layer -> Scanned page
   if (textLength < 15) {
     return {
       hasUsableText: false,
@@ -261,12 +407,13 @@ export function analyzeTextLayer(rawText, options = {}) {
         devanagariRatio: 0,
         asciiRatio: 0,
         controlCharRatio: 0,
+        confidenceScore: 0,
       },
       convertedText: null,
     };
   }
 
-  // 2. Count special character categories
+  // 2. Count character distributions
   const replacementCharCount = (text.match(/\uFFFD/g) || []).length;
   const puaCharCount = (text.match(/[\uE000-\uF8FF]/g) || []).length;
   const devanagariCount = (text.match(/[\u0900-\u097F]/g) || []).length;
@@ -277,8 +424,8 @@ export function analyzeTextLayer(rawText, options = {}) {
   const asciiRatio = Math.round((asciiAlphaCount / textLength) * 100) / 100;
   const controlCharRatio = Math.round((controlCharCount / textLength) * 100) / 100;
 
-  // 3. Replacement characters (Unicode \uFFFD) indicating bad encoding / missing font table
-  if (replacementCharCount > 3 || (replacementCharCount / textLength > 0.04)) {
+  // 3. Replacement characters (\uFFFD) indicating corrupted decoding or missing fonts
+  if (replacementCharCount > 3 || replacementCharCount / textLength > 0.04) {
     return {
       hasUsableText: false,
       classification: "CORRUPTED",
@@ -292,13 +439,14 @@ export function analyzeTextLayer(rawText, options = {}) {
         devanagariRatio,
         asciiRatio,
         controlCharRatio,
+        confidenceScore: 0.1,
       },
       convertedText: null,
     };
   }
 
-  // 4. Private Use Area (PUA) characters indicating proprietary legacy Indic font mappings
-  if (puaCharCount > 5 || (puaCharCount / textLength > 0.08)) {
+  // 4. Private Use Area (PUA) characters indicating legacy proprietary font mapping
+  if (puaCharCount > 5 || puaCharCount / textLength > 0.08) {
     return {
       hasUsableText: false,
       classification: "CORRUPTED",
@@ -312,6 +460,7 @@ export function analyzeTextLayer(rawText, options = {}) {
         devanagariRatio,
         asciiRatio,
         controlCharRatio,
+        confidenceScore: 0.2,
       },
       convertedText: null,
     };
@@ -337,12 +486,39 @@ export function analyzeTextLayer(rawText, options = {}) {
         devanagariRatio,
         asciiRatio,
         controlCharRatio,
+        confidenceScore: krutiCheck.confidence,
       },
       convertedText: isSuccessfulConversion ? converted : null,
     };
   }
 
-  // 6. Expected Devanagari but got Latin characters (unsupported font or 8-bit glyph mojibake)
+  // 6. Detect Chanakya / Walkman-Chanakya legacy encoding
+  const chanakyaCheck = detectChanakyaEncoding(text);
+  if (chanakyaCheck.isChanakya && chanakyaCheck.confidence >= 0.60) {
+    const converted = convertChanakyaToUnicode(text);
+    const convertedDevanagariCount = (converted.match(/[\u0900-\u097F]/g) || []).length;
+    const isSuccessfulConversion = convertedDevanagariCount / Math.max(1, converted.length) > 0.35;
+
+    return {
+      hasUsableText: isSuccessfulConversion,
+      classification: isSuccessfulConversion ? "DIGITAL" : "CORRUPTED",
+      ocrTriggerReason: isSuccessfulConversion ? null : "LEGACY_DTP_FONT_CHANAKYA_UNVERIFIED",
+      isLegacyFont: true,
+      detectedFont: "Chanakya",
+      metrics: {
+        textLength,
+        replacementCharCount,
+        puaCharCount,
+        devanagariRatio,
+        asciiRatio,
+        controlCharRatio,
+        confidenceScore: chanakyaCheck.confidence,
+      },
+      convertedText: isSuccessfulConversion ? converted : null,
+    };
+  }
+
+  // 7. Expected Indic/Sanskrit text but got Latin characters (unmapped font or 8-bit glyph mojibake)
   if (isIndicExpected && textLength > 30 && devanagariRatio < 0.18) {
     return {
       hasUsableText: false,
@@ -357,12 +533,13 @@ export function analyzeTextLayer(rawText, options = {}) {
         devanagariRatio,
         asciiRatio,
         controlCharRatio,
+        confidenceScore: 0.15,
       },
       convertedText: null,
     };
   }
 
-  // 6b. Detect corrupted legacy Devanagari font glyph sequences (legacy DTP / Pagemaker mis-mappings)
+  // 8. Detect corrupted legacy Devanagari font glyph sequences (legacy DTP / Pagemaker mis-mappings)
   const legacyAnomalyCount = (text.match(/\u0929/g) || []).length + (text.match(/\u093A/g) || []).length;
   const hasLegacyKeywords = /(?:^|\s|[।॥,])(?:औय|शयीय|ककसी|ददव्म|सबी|शडि|अयॊडी|वनस्ऩनत|ऩौवष्टक)(?:[\s।॥,]|$)/.test(text);
 
@@ -380,12 +557,13 @@ export function analyzeTextLayer(rawText, options = {}) {
         devanagariRatio,
         asciiRatio,
         controlCharRatio,
+        confidenceScore: 0.25,
       },
       convertedText: null,
     };
   }
 
-  // 7. Excessive control characters or garbled bytes
+  // 9. Excessive control characters or garbled byte sequences
   if (controlCharRatio > 0.08) {
     return {
       hasUsableText: false,
@@ -400,12 +578,13 @@ export function analyzeTextLayer(rawText, options = {}) {
         devanagariRatio,
         asciiRatio,
         controlCharRatio,
+        confidenceScore: 0.2,
       },
       convertedText: null,
     };
   }
 
-  // 8. Text is usable digital text
+  // 10. Clean, Reliable Digital Text Layer (Skip OCR, save processing time)
   return {
     hasUsableText: true,
     classification: imageCount > 0 ? "MIXED" : "DIGITAL",
@@ -419,6 +598,7 @@ export function analyzeTextLayer(rawText, options = {}) {
       devanagariRatio,
       asciiRatio,
       controlCharRatio,
+      confidenceScore: 0.98,
     },
     convertedText: null,
   };

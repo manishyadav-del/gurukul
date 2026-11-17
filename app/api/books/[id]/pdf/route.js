@@ -59,27 +59,82 @@ export async function GET(request, { params }) {
     const { searchParams } = new URL(request.url);
     const isDownload = searchParams.get("download") === "true";
     const isInfoRequest = searchParams.get("info") === "true" || searchParams.get("format") === "json";
+    const requestSource = searchParams.get("source") === "original";
+
+    // 1. Check for Active Verified Publication Artifact
+    const { getActivePublicationArtifact } = await import("../../../../../server/manuscript/publicationEngine.js");
+    const activePublication = await getActivePublicationArtifact(book.id);
 
     // Locate PDF file on disk
     let diskPath = null;
     let filename = `${book.slug || book.id}-digitized-edition.pdf`;
 
-    // 1. Check generated digital book PDF
-    const generatedPdfRelative = getGeneratedBookPdfUrl(book.id, book.slug);
-    if (generatedPdfRelative) {
-      const genDiskPath = path.join(process.cwd(), "public", generatedPdfRelative.replace(/^\//, ""));
-      if (fs.existsSync(genDiskPath)) {
-        diskPath = genDiskPath;
-        filename = path.basename(genDiskPath);
+    // Normal readers ALWAYS get the verified publication artifact if one exists
+    const authenticatedUser = await getAuthenticatedUser(request);
+    const isPrivilegedUser = authenticatedUser && canReviewBooks(authenticatedUser);
+
+    if (activePublication && (!requestSource || !isPrivilegedUser)) {
+      diskPath = activePublication.absolutePath;
+      filename = `${book.slug || book.id}-v${activePublication.manifest.version}-verified.pdf`;
+    }
+
+    // 2. Check original source PDF across multiple potential storage locations
+    if (!diskPath && book.originalFileUrl) {
+      const normalizedRelative = book.originalFileUrl.replace(/\\/g, "/").replace(/^\//, "");
+      const candidates = [
+        path.join(process.cwd(), "public", normalizedRelative),
+        path.join(process.cwd(), "public", "uploads", normalizedRelative),
+        path.join(process.cwd(), "public", "uploads", "books", book.id, "original", book.originalFileName || ""),
+        path.join(process.cwd(), "public", "uploads", "books", book.id, "original", path.basename(normalizedRelative)),
+      ];
+      for (const cand of candidates) {
+        if (cand && fs.existsSync(cand)) {
+          diskPath = cand;
+          filename = book.originalFileName || path.basename(cand);
+          break;
+        }
       }
     }
 
-    // 2. Check original source PDF
-    if (!diskPath && book.originalFileUrl) {
-      const origDiskPath = path.join(process.cwd(), "public", book.originalFileUrl.replace(/^\//, ""));
-      if (fs.existsSync(origDiskPath)) {
-        diskPath = origDiskPath;
-        filename = book.originalFileName || `${book.slug || book.id}-source.pdf`;
+    // 2b. Check original folder for any existing PDF
+    if (!diskPath && book.id) {
+      const originalDir = path.join(process.cwd(), "public", "uploads", "books", book.id, "original");
+      if (fs.existsSync(originalDir)) {
+        try {
+          const files = fs.readdirSync(originalDir);
+          const pdfFile = files.find((f) => f.toLowerCase().endsWith(".pdf"));
+          if (pdfFile) {
+            diskPath = path.join(originalDir, pdfFile);
+            filename = pdfFile;
+          }
+        } catch (_) {}
+      }
+    }
+
+    // 3. Fallback: Check generated digital book PDF (only if no original or publication artifact exists)
+    if (!diskPath) {
+      const generatedPdfRelative = getGeneratedBookPdfUrl(book.id, book.slug);
+      if (generatedPdfRelative) {
+        const genDiskPath = path.join(process.cwd(), "public", generatedPdfRelative.replace(/^\//, ""));
+        if (fs.existsSync(genDiskPath)) {
+          diskPath = genDiskPath;
+          filename = path.basename(genDiskPath);
+        }
+      }
+    }
+
+    // 2c. Check root book uploads folder for any existing PDF
+    if (!diskPath && book.id) {
+      const bookDir = path.join(process.cwd(), "public", "uploads", "books", book.id);
+      if (fs.existsSync(bookDir)) {
+        try {
+          const files = fs.readdirSync(bookDir);
+          const pdfFile = files.find((f) => f.toLowerCase().endsWith(".pdf"));
+          if (pdfFile) {
+            diskPath = path.join(bookDir, pdfFile);
+            filename = pdfFile;
+          }
+        } catch (_) {}
       }
     }
 

@@ -1,6 +1,9 @@
+import { correctDevanagariOcrText } from "./devanagariCorrections.js";
+
 /**
  * OCR Result Normalizer
  * Enforces the standardized OCR contract across all OCR engines.
+ * Applies authentic Devanagari punctuation, avagraha, and vowel normalization.
  * 
  * Contract:
  * {
@@ -21,6 +24,16 @@
 export function normalizeOcrResult(rawResult, options = {}) {
   const pageNumber = options.pageNumber ?? 1;
   const defaultLanguage = options.language ?? (process.env.OCR_LANGUAGE || "eng");
+  const isIndic = options.isIndic ||
+    ["hi", "hindi", "sa", "san", "sanskrit", "hin"].includes(String(defaultLanguage).toLowerCase());
+
+  const applyDevanagariNormalization = (str) => {
+    if (!str) return "";
+    if (isIndic || /[\u0900-\u097F]/.test(str)) {
+      return correctDevanagariOcrText(str);
+    }
+    return str.trim();
+  };
 
   if (!rawResult) {
     return {
@@ -35,7 +48,7 @@ export function normalizeOcrResult(rawResult, options = {}) {
     return {
       pageNumber,
       blocks: rawResult.blocks.map((b, idx) => ({
-        text: (b.text || "").trim(),
+        text: applyDevanagariNormalization(b.text || ""),
         confidence: typeof b.confidence === "number"
           ? (b.confidence > 1 ? Math.round((b.confidence / 100) * 100) / 100 : Math.round(b.confidence * 100) / 100)
           : null,
@@ -50,7 +63,7 @@ export function normalizeOcrResult(rawResult, options = {}) {
         order: b.order ?? idx + 1,
         language: b.language || defaultLanguage,
       })),
-      fullText: rawResult.fullText.trim(),
+      fullText: applyDevanagariNormalization(rawResult.fullText),
     };
   }
 
@@ -62,7 +75,7 @@ export function normalizeOcrResult(rawResult, options = {}) {
   const normalizedBlocks = [];
 
   for (const block of rawBlocks) {
-    const text = (block.text || "").trim();
+    const text = applyDevanagariNormalization(block.text || "");
     if (!text) continue;
 
     let bbox = null;
@@ -102,7 +115,7 @@ export function normalizeOcrResult(rawResult, options = {}) {
     const paragraphs = fullText.split(/\n\s*\n/).filter((p) => p.trim());
     for (const para of paragraphs) {
       normalizedBlocks.push({
-        text: para.trim(),
+        text: applyDevanagariNormalization(para),
         confidence,
         bbox: null,
         order: order++,
@@ -114,6 +127,6 @@ export function normalizeOcrResult(rawResult, options = {}) {
   return {
     pageNumber,
     blocks: normalizedBlocks,
-    fullText,
+    fullText: applyDevanagariNormalization(fullText),
   };
 }

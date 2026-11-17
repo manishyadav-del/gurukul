@@ -64,7 +64,7 @@ export default function AIChatPage() {
       title: "Ask about your Kundli",
       desc: "Get personalized insights from your chart",
       prompt: "What does my Moon in Rohini mean in terms of career and emotional nature?",
-      bg: "bg-[#eef5fc] border-[#d7e6f8] text-[#1e4d7b]",
+      bg: "bg-[#eef5fc] border-[#c0d8f0] text-[#133d65]",
       iconBg: "bg-[#d8e9f9]",
       icon: Compass,
     },
@@ -72,23 +72,23 @@ export default function AIChatPage() {
       title: "Explain a Shloka",
       desc: "Understand in simple terms",
       prompt: "Can you explain the significance of 'Karmanye Vadhikaraste Ma Phaleshu Kadachana'?",
-      bg: "bg-[#fdf2ea] border-[#f8dfce] text-[#8e4418]",
+      bg: "bg-[#fdf2ea] border-[#ecc4ab] text-[#783610]",
       iconBg: "bg-[#fae2d2]",
       icon: BookOpen,
     },
     {
       title: "Find the Right Book",
-      desc: "Get recommendations",
+      desc: "Get scholarly recommendations",
       prompt: "Which classical treatise should I read to learn planetary aspects (drishti)?",
-      bg: "bg-[#fef7e8] border-[#faecc9] text-[#7d560c]",
+      bg: "bg-[#fef7e8] border-[#f2dda7] text-[#6d4a06]",
       iconBg: "bg-[#fbedcb]",
       icon: Sparkles,
     },
     {
       title: "General Questions",
-      desc: "Ask anything",
+      desc: "Explore classical principles",
       prompt: "What is the difference between Western astrology and Vedic Jyotisha?",
-      bg: "bg-[#ebf5f0] border-[#cce8dc] text-[#196544]",
+      bg: "bg-[#ebf5f0] border-[#b5ded0] text-[#125337]",
       iconBg: "bg-[#d2ede0]",
       icon: HelpCircle,
     },
@@ -164,24 +164,25 @@ export default function AIChatPage() {
     <div className="bg-[#fcfaf5] min-h-screen py-6 sm:py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-stone-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-200">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold font-serif text-stone-900 tracking-tight flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-[#d4a359]" />
               <span>Astro AI Assistant</span>
             </h1>
-            <p className="text-xs sm:text-sm text-stone-500">
+            <p className="text-xs sm:text-sm text-stone-600 mt-0.5 font-medium">
               Personalized Vedic Jyotish analysis, manuscript citations, and spiritual guidance
             </p>
           </div>
 
           {familyMembers.length > 0 && (
-            <div className="flex items-center gap-2 text-xs self-start sm:self-auto bg-white px-3 py-1.5 rounded-xl border border-stone-200 shadow-2xs">
-              <span className="text-stone-500 font-medium">Personalize for:</span>
+            <div className="flex items-center gap-2 text-xs self-start sm:self-auto bg-white px-3.5 py-2 rounded-xl border border-stone-200 shadow-2xs">
+              <label htmlFor="familySelector" className="text-stone-600 font-semibold">Personalize for:</label>
               <select
+                id="familySelector"
                 value={selectedFamilyMemberId}
                 onChange={(e) => setSelectedFamilyMemberId(e.target.value)}
-                className="bg-transparent font-semibold text-amber-900 outline-none cursor-pointer"
+                className="bg-transparent font-bold text-amber-950 outline-none cursor-pointer"
               >
                 <option value="">Myself (Personal Natal Chart)</option>
                 {familyMembers.map((fm) => (
@@ -202,18 +203,18 @@ export default function AIChatPage() {
               <button
                 key={idx}
                 onClick={() => handleCardClick(card.prompt)}
-                className={`p-3.5 rounded-2xl border ${card.bg} text-left transition hover:scale-[1.02] shadow-2xs flex flex-col justify-between min-h-[105px] cursor-pointer`}
+                className={`p-4 rounded-2xl border ${card.bg} text-left transition hover:scale-[1.02] shadow-2xs flex flex-col justify-between min-h-[115px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#13382c]`}
               >
                 <div
-                  className={`w-7 h-7 rounded-xl ${card.iconBg} flex items-center justify-center shrink-0 mb-2`}
+                  className={`w-8 h-8 rounded-xl ${card.iconBg} flex items-center justify-center shrink-0 mb-2.5 shadow-2xs`}
                 >
                   <Icon className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-serif font-bold text-xs sm:text-sm leading-tight">
+                  <h2 className="font-serif font-bold text-xs sm:text-sm leading-tight text-inherit">
                     {card.title}
-                  </h3>
-                  <p className="text-[11px] opacity-80 mt-0.5 leading-snug">
+                  </h2>
+                  <p className="text-xs opacity-90 mt-1 leading-snug font-medium text-inherit">
                     {card.desc}
                   </p>
                 </div>
@@ -223,7 +224,7 @@ export default function AIChatPage() {
         </div>
 
         {/* Chat Thread Container */}
-        <div className="bg-white rounded-2xl border border-[#ede5d6] p-4 sm:p-6 min-h-[380px] max-h-[540px] overflow-y-auto space-y-4 shadow-2xs">
+        <section aria-label="Conversation Thread" className="bg-white rounded-2xl border border-[#ede5d6] p-4 sm:p-6 min-h-[380px] max-h-[540px] overflow-y-auto space-y-4 shadow-2xs">
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -234,21 +235,22 @@ export default function AIChatPage() {
               {msg.role === "assistant" ? (
                 <div className="flex items-start gap-3 max-w-2xl">
                   {/* AI Portrait Avatar */}
-                  <div className="w-8 h-8 rounded-full bg-[#13382c] text-[#d4a359] flex items-center justify-center font-serif font-bold text-xs shrink-0 shadow-xs">
+                  <div className="w-8 h-8 rounded-full bg-[#13382c] text-[#d4a359] flex items-center justify-center font-serif font-bold text-xs shrink-0 shadow-xs" aria-hidden="true">
                     ॐ
                   </div>
-                  <div className="bg-[#faf8f4] border border-[#ede5d6] text-stone-800 text-xs sm:text-sm p-4 rounded-2xl rounded-tl-none leading-relaxed shadow-2xs space-y-2">
-                    <p className="whitespace-pre-line">{msg.content}</p>
+                  <div className="bg-[#faf8f4] border border-[#ede5d6] text-stone-900 text-xs sm:text-sm p-4 rounded-2xl rounded-tl-none leading-relaxed shadow-2xs space-y-2.5">
+                    <p className="whitespace-pre-line font-normal">{msg.content}</p>
 
                     {/* Citations if available */}
                     {msg.sources && msg.sources.length > 0 && (
-                      <div className="pt-2 border-t border-stone-200 mt-2 space-y-1">
-                        <div className="text-[10px] uppercase font-bold text-stone-400">
+                      <div className="pt-2.5 border-t border-stone-200 mt-2 space-y-1.5">
+                        <div className="text-xs uppercase font-bold text-stone-700">
                           Source References:
                         </div>
                         {msg.sources.map((src, i) => (
-                          <div key={i} className="text-[11px] text-[#13382c] font-medium">
-                            • {src.bookTitle} (Ch: {src.chapterTitle})
+                          <div key={i} className="text-xs text-[#13382c] font-semibold flex items-center gap-1.5">
+                            <span>•</span>
+                            <span>{src.bookTitle} (Ch: {src.chapterTitle})</span>
                           </div>
                         ))}
                       </div>
@@ -256,7 +258,7 @@ export default function AIChatPage() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-[#dcf0fb] text-[#13382c] font-medium text-xs sm:text-sm px-4 py-2.5 rounded-2xl rounded-tr-none max-w-lg shadow-2xs">
+                <div className="bg-[#dcf0fb] border border-[#bce0f5] text-[#0f2e24] font-medium text-xs sm:text-sm px-4 py-2.5 rounded-2xl rounded-tr-none max-w-lg shadow-2xs">
                   {msg.content}
                 </div>
               )}
@@ -265,34 +267,37 @@ export default function AIChatPage() {
 
           {loading && (
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#13382c] text-[#d4a359] flex items-center justify-center font-serif font-bold text-xs shrink-0">
+              <div className="w-8 h-8 rounded-full bg-[#13382c] text-[#d4a359] flex items-center justify-center font-serif font-bold text-xs shrink-0" aria-hidden="true">
                 ॐ
               </div>
-              <div className="bg-[#faf8f4] border border-[#ede5d6] text-stone-500 text-xs p-3.5 rounded-2xl rounded-tl-none flex items-center gap-2">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#13382c]" />
-                <span>Consulting classical manuscripts and synthesizing answer...</span>
+              <div className="bg-[#faf8f4] border border-[#ede5d6] text-stone-700 text-xs sm:text-sm p-3.5 rounded-2xl rounded-tl-none flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin text-[#13382c]" />
+                <span className="font-medium">Consulting classical manuscripts and synthesizing answer...</span>
               </div>
             </div>
           )}
 
           <div ref={messagesEndRef} />
-        </div>
+        </section>
 
         {/* Question Input Form */}
         <form onSubmit={handleSubmit} className="relative">
+          <label htmlFor="ai-chat-input" className="sr-only">Ask your Vedic astrology question</label>
           <input
+            id="ai-chat-input"
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask your question..."
+            placeholder="Ask your Vedic astrology question..."
             disabled={loading}
-            className="w-full bg-white text-stone-900 placeholder-stone-400 text-xs sm:text-sm pl-4 pr-12 py-3.5 rounded-2xl border border-[#ede5d6] focus:outline-none focus:ring-2 focus:ring-[#13382c]/40 shadow-2xs"
+            className="w-full bg-white text-stone-900 placeholder-stone-500 text-xs sm:text-sm pl-4 pr-14 py-3.5 rounded-2xl border border-[#ede5d6] focus:outline-none focus:ring-2 focus:ring-[#13382c] shadow-2xs"
           />
           <button
             type="submit"
             disabled={!input.trim() || loading}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-[#13382c] hover:bg-[#1b4b3b] text-white flex items-center justify-center transition disabled:opacity-30 cursor-pointer shadow-xs"
-            title="Send"
+            aria-label="Send query to Astro AI"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-[#13382c] hover:bg-[#1b4b3b] text-white flex items-center justify-center transition disabled:opacity-30 cursor-pointer shadow-xs min-h-[44px] min-w-[44px]"
+            title="Send query"
           >
             <Send className="w-4 h-4" />
           </button>

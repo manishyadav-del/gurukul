@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/server/security/authGuard";
 import { askResearchQuestion } from "@/server/ai/researchAssistant";
+import { applyRateLimit, RATE_LIMIT_TIERS } from "@/server/security/rateLimiter";
+import { apiError } from "@/server/security/apiResponse";
 
 // POST /api/research/assistant
 export async function POST(request) {
   try {
+    const rateLimitResponse = applyRateLimit(request, RATE_LIMIT_TIERS.AI_RESEARCH);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const user = await getAuthenticatedUser(request);
     const body = await request.json();
 
@@ -32,10 +37,6 @@ export async function POST(request) {
 
     return NextResponse.json(result);
   } catch (err) {
-    console.error("POST /api/research/assistant error:", err);
-    return NextResponse.json(
-      { error: err.message || "Failed to process research inquiry." },
-      { status: 500 }
-    );
+    return apiError(err, 500, "RESEARCH_ASSISTANT_FAILED", request);
   }
 }

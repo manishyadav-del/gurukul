@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/server/security/authGuard";
 import { canReviewBooks, canManageBooks } from "@/lib/permissions";
+import { apiError } from "@/server/security/apiResponse";
 
 // GET /api/ingest?bookId=...&page=1&limit=20
 export async function GET(request) {
@@ -65,10 +66,6 @@ export async function GET(request) {
       },
     });
   } catch (error) {
-    console.error("GET /api/ingest error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch ingest jobs", details: error.message },
-      { status: 500 }
-    );
+    return apiError(error, 500, "INGEST_FETCH_FAILED", request);
   }
 }

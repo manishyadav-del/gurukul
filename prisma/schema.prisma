@@ -100,6 +100,8 @@ model User {
   birthTime           String?
   birthPlace          String?
   gender              String?
+  isEmailVerified     Boolean           @default(true) @map("is_email_verified")
+  emailVerified       DateTime?         @map("email_verified")
   isActive            Boolean           @default(true) @map("is_active")
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
@@ -124,6 +126,10 @@ model User {
   recentTopics        UserRecentTopic[]
   researchCollections ResearchCollection[]
   researchItems       ResearchItem[]
+  practicePlans       DailyPracticePlan[]
+  practicePreference  UserPracticePreference?
+  festivalPreferences UserFestivalPreference[]
+  observanceReminders UserObservanceReminder[]
 
   @@index([totalXp])
   @@index([isActive])
@@ -138,6 +144,9 @@ model Book {
   author           String?
   publisher        String?
   edition          String?
+  publicationYear  Int?
+  tradition        String?
+  manuscriptProvenance Json?
   isbn             String?
   language         String           @default("Hindi")
   script           String?          @default("Devanagari")
@@ -175,9 +184,12 @@ model Book {
   correctionHistory CorrectionHistory[]
   savedConcepts     UserSavedConcept[]
   researchItems     ResearchItem[]
+  scholarlyReviews  ScholarlyReview[]
   knowledgeConcepts KnowledgeConcept[]
   knowledgeRelationships KnowledgeRelationship[]
   knowledgeExtractionJobs KnowledgeExtractionJob[]
+  publicationManifests    PublicationManifest[]
+  scholarlyExplanations   ScholarlyExplanation[]
 
   @@index([status])
   @@index([status, createdAt])
@@ -205,20 +217,30 @@ model BookPage {
   reviewedAt           DateTime?
   ocrProfile           String?              @default("standard")
   qualityIssues        Json?
+  verificationStatus   String               @default("UNREVIEWED")
+  isIncluded           Boolean              @default(true)
+  isPublished          Boolean              @default(true)
+  exclusionReason      String?
+  verifiedByUserId     String?
+  verifiedAt           DateTime?
   retryCount           Int                  @default(0)
   processingDurationMs Int?
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
 
-  book              Book                @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  ocrBlocks         OcrBlock[]
-  passages          Passage[]
-  ocrErrors         OcrError[]
-  correctionHistory CorrectionHistory[]
+  book                  Book                   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  ocrBlocks             OcrBlock[]
+  passages              Passage[]
+  ocrErrors             OcrError[]
+  correctionHistory     CorrectionHistory[]
+  scholarlyReviews      ScholarlyReview[]
+  scholarlyExplanations ScholarlyExplanation[]
 
   @@unique([bookId, pageNumber])
   @@index([bookId, proofread])
   @@index([bookId, ocrCompleted])
+  @@index([verificationStatus])
+  @@index([proofread])
   @@map("book_pages")
 }
 
@@ -243,6 +265,12 @@ model OcrBlock {
 model Chapter {
   id            String        @id @default(uuid())
   bookId        String
+  parentId      String?
+  structuralType String?      @default("ADHYAYA")
+  sanskritTitle String?
+  hindiTitle    String?
+  englishTitle  String?
+  sequenceNumber Int?         @default(1)
   number        Int           @default(1)
   chapterNumber Int           @default(1)
   title         String
@@ -259,17 +287,21 @@ model Chapter {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @default(now()) @updatedAt
 
-  book            Book              @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  passages        Passage[]
-  readingProgress ReadingProgress[]
-  bookmarks       Bookmark[]
-  quizzes         Quiz[]
-  notes           Note[]
-  researchItems   ResearchItem[]
+  book                  Book                   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  parent                Chapter?               @relation("ChapterHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children              Chapter[]              @relation("ChapterHierarchy")
+  passages              Passage[]
+  readingProgress       ReadingProgress[]
+  bookmarks             Bookmark[]
+  quizzes               Quiz[]
+  notes                 Note[]
+  researchItems         ResearchItem[]
+  scholarlyExplanations ScholarlyExplanation[]
 
   @@unique([bookId, slug])
   @@index([bookId, sortOrder])
   @@index([bookId, chapterNumber])
+  @@index([bookId, parentId])
   @@map("chapters")
 }
 
@@ -296,23 +328,40 @@ model Passage {
   sourcePage    Int?
   endPage       Int?
   ocrConfidence Float?
+  transliteration    String?        @db.Text
+  hindiTranslation   String?        @db.Text
+  englishTranslation String?        @db.Text
+  translationSource  String?
+  translator         String?
+  commentary         String?        @db.Text
+  commentarySource   String?
+  anvaya             String?        @db.Text
+  verseNumber        String?
+  verificationStatus String         @default("UNREVIEWED")
+  isPublished        Boolean        @default(true)
+  verifiedBy         String?
+  verifiedAt         DateTime?
+  scholarlyNotes     String?        @db.Text
+  provenanceMetadata Json?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
-  book              Book                @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  chapter           Chapter?            @relation(fields: [chapterId], references: [id], onDelete: SetNull)
-  page              BookPage?           @relation(fields: [pageId], references: [id], onDelete: SetNull)
-  aiSources         AISource[]
-  bookmarks         Bookmark[]
-  documentChunks    DocumentChunk[]
-  notes             Note[]
-  quizQuestions     QuizQuestion[]
-  readingProgress   ReadingProgress[]
-  correctionHistory CorrectionHistory[]
-  passageEmbeddings PassageEmbedding[]
-  savedConcepts     UserSavedConcept[]
-  researchItems     ResearchItem[]
-  knowledgeConcepts KnowledgeConcept[]
+  book                  Book                      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapter               Chapter?                  @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  page                  BookPage?                 @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  aiSources             AISource[]
+  bookmarks             Bookmark[]
+  documentChunks        DocumentChunk[]
+  notes                 Note[]
+  quizQuestions         QuizQuestion[]
+  readingProgress       ReadingProgress[]
+  correctionHistory     CorrectionHistory[]
+  passageEmbeddings     PassageEmbedding[]
+  savedConcepts         UserSavedConcept[]
+  researchItems         ResearchItem[]
+  scholarlyReviews      ScholarlyReview[]
+  scholarlyExplanations ScholarlyExplanation[]
+  knowledgeConcepts     KnowledgeConcept[]
   knowledgeRelationships KnowledgeRelationship[]
   knowledgeExtractionJobs KnowledgeExtractionJob[]
   conceptReferences PassageConceptReference[]
@@ -320,6 +369,10 @@ model Passage {
   @@index([bookId, sortOrder])
   @@index([bookId, chapterId])
   @@index([sourcePage])
+  @@index([verificationStatus])
+  @@index([passageType])
+  @@index([status])
+  @@index([bookId, status])
   @@map("passages")
 }
 
@@ -352,6 +405,7 @@ model IngestJob {
 
   @@index([status, priority, createdAt])
   @@index([lastHeartbeat])
+  @@index([bookId])
   @@map("ingest_jobs")
 }
 
@@ -684,6 +738,9 @@ model CorrectionHistory {
   previousText  String   @db.Text
   correctedText String   @db.Text
   correctedBy   String
+  reason        String?
+  notes         String?  @db.Text
+  reviewStatus  String?
   createdAt     DateTime @default(now())
 
   book    Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
@@ -780,6 +837,8 @@ model EmbeddingBatchJob {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  @@index([status])
+  @@index([status, createdAt])
   @@map("embedding_batch_jobs")
 }
 
@@ -1061,6 +1120,67 @@ model UserPracticeLog {
   @@map("user_practice_logs")
 }
 
+model DailyPracticePlan {
+  id              String               @id @default(uuid())
+  userId          String               @map("user_id")
+  planDate        String               @map("plan_date") // YYYY-MM-DD
+  targetDuration  Int                  @default(30) @map("target_duration") // Total target in minutes
+  completed       Boolean              @default(false)
+  notes           String?              @db.Text
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items           DailyPracticeItem[]
+
+  @@unique([userId, planDate])
+  @@index([userId, planDate])
+  @@map("daily_practice_plans")
+}
+
+model DailyPracticeItem {
+  id              String            @id @default(uuid())
+  planId          String            @map("plan_id")
+  category        String            // MANTRA, MEDITATION, PRANAYAMA, READING, PUJA, CHAKRA
+  title           String
+  description     String?           @db.Text
+  durationMinutes Int               @default(10) @map("duration_minutes")
+  completed       Boolean           @default(false)
+  completedAt     DateTime?         @map("completed_at")
+  sanskritText    String?           @db.Text @map("sanskrit_text")
+  transliteration String?           @db.Text
+  meaningEn       String?           @db.Text @map("meaning_en")
+  meaningHi       String?           @db.Text @map("meaning_hi")
+  sourceReference String?           @map("source_reference")
+  bookSlug        String?           @map("book_slug")
+  passageId       String?           @map("passage_id")
+  pageNumber      Int?              @map("page_number")
+  order           Int               @default(0)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  plan            DailyPracticePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+  @@map("daily_practice_items")
+}
+
+model UserPracticePreference {
+  id                  String    @id @default(uuid())
+  userId              String    @unique @map("user_id")
+  preferredCategories String[]  @default(["MANTRA", "MEDITATION", "READING", "PRANAYAMA"]) @map("preferred_categories")
+  dailyTargetMinutes  Int       @default(30) @map("daily_target_minutes")
+  preferredLanguage   String    @default("en") @map("preferred_language") // "en" | "hi"
+  remindersEnabled    Boolean   @default(false) @map("reminders_enabled")
+  preferredTime       String?   @default("06:00") @map("preferred_time") // HH:MM
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_practice_preferences")
+}
+
 // ============================================================================
 // KUNDALINI & CHAKRA EDUCATIONAL GUIDANCE
 // ============================================================================
@@ -1295,6 +1415,7 @@ model KnowledgeRelationship {
   status              String            @default("APPROVED") // APPROVED, AI_DISCOVERED, REJECTED, NEEDS_REVIEW
   reviewedBy          String?           @map("reviewed_by")
   reviewedAt          DateTime?         @map("reviewed_at")
+  reviewerNotes       String?           @map("reviewer_notes") @db.Text
   isBidirectional     Boolean           @default(false) @map("is_bidirectional")
   metadata            Json?
   createdAt           DateTime          @default(now()) @map("created_at")
@@ -1310,6 +1431,8 @@ model KnowledgeRelationship {
   @@index([targetConceptId])
   @@index([relationshipType])
   @@index([status])
+  @@index([sourceBookId])
+  @@index([sourcePassageId])
   @@map("knowledge_relationships")
 }
 
@@ -1352,6 +1475,241 @@ model KnowledgeExtractionJob {
   @@index([passageId])
   @@map("knowledge_extraction_jobs")
 }
+
+model ScholarlyReview {
+  id               String    @id @default(uuid())
+  bookId           String
+  passageId        String?
+  pageId           String?
+  reviewerId       String?
+  reviewerEmail    String
+  reviewerRole     String    @default("PROOFREADER")
+  previousStatus   String    @default("UNREVIEWED")
+  newStatus        String    // UNREVIEWED, PENDING_REVIEW, UNDER_REVIEW, VERIFIED, VERIFIED_WITH_CORRECTIONS, NEEDS_CORRECTION, REJECTED
+  action           String    // SUBMIT, ASSIGN, APPROVE, REJECT, CORRECT, FLAG_CORRECTION
+  reason           String?
+  scholarlyNotes   String?   @db.Text
+  originalText     String?   @db.Text
+  verifiedText     String?   @db.Text
+  characterChanges Json?
+  metadata         Json?
+  createdAt        DateTime  @default(now())
+
+  book    Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  passage Passage?  @relation(fields: [passageId], references: [id], onDelete: Cascade)
+  page    BookPage? @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([bookId])
+  @@index([passageId])
+  @@index([pageId])
+  @@index([newStatus])
+  @@index([createdAt])
+  @@map("scholarly_reviews")
+}
+
+model ScholarlyExplanation {
+  id              String    @id @default(uuid())
+  bookId          String
+  chapterId       String?
+  pageNumber      Int?
+  pageId          String?
+  passageId       String?
+  explanationType String    @default("AI_GENERATED") // SIMPLE, WORD_BY_WORD, GRAMMAR, ANVAYA, COMMENTARY, AI_GENERATED
+  content         String    @db.Text
+  language        String    @default("en")
+  status          String    @default("UNREVIEWED") // UNREVIEWED, PENDING_REVIEW, UNDER_REVIEW, VERIFIED, VERIFIED_WITH_CORRECTIONS, NEEDS_CORRECTION, REJECTED, UNPUBLISHED
+  isPublished     Boolean   @default(false)
+  reviewerId      String?
+  reviewerEmail   String?
+  reviewerNotes   String?   @db.Text
+  confidence      Float?
+  version         Int       @default(1)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  book    Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapter Chapter?  @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  page    BookPage? @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  passage Passage?  @relation(fields: [passageId], references: [id], onDelete: SetNull)
+
+  @@index([bookId])
+  @@index([chapterId])
+  @@index([passageId])
+  @@index([pageNumber])
+  @@index([status])
+  @@index([isPublished])
+  @@map("scholarly_explanations")
+}
+
+model PublicationManifest {
+  id               String    @id @default(uuid())
+  bookId           String
+  version          Int       @default(1)
+  status           String    @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED, REVOKED
+  approvedPages    Json      // Array of approved page numbers e.g. [1, 2, 3...]
+  excludedPages    Json?     // Array of excluded page numbers
+  publishedPdfPath String?
+  fileHash         String?
+  pageCount        Int       @default(0)
+  publishedBy      String?
+  publishedAt      DateTime?
+  notes            String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([bookId])
+  @@index([status])
+  @@map("publication_manifests")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  email     String
+  tokenHash String
+  otpCode   String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([tokenHash])
+  @@index([otpCode])
+  @@map("email_verification_tokens")
+}
+
+model VedicFestival {
+  id                 String                       @id @default(uuid())
+  slug               String                       @unique
+  name               String
+  nameHi             String?
+  nameSanskrit       String?
+  category           String                       @default("FESTIVAL") // FESTIVAL, VRATA, JAYANTI, SANKRANTI, ECLIPSE, SEASONAL, REGIONAL
+  description        String?                      @db.Text
+  descriptionHi      String?                      @db.Text
+  significance       String?                      @db.Text
+  significanceHi     String?                      @db.Text
+  deities            Json?                        // string[] e.g. ["Lord Shiva", "Maa Parvati"]
+  pujaVidhi          String?                      @db.Text
+  pujaVidhiHi        String?                      @db.Text
+  vrataRules         String?                      @db.Text
+  vrataRulesHi       String?                      @db.Text
+  mantras            Json?                        // { title, sanskrit, transliteration, meaningEn, meaningHi }[]
+  faqs               Json?                        // { q, a, qHi, aHi }[]
+  regionalVariations Json?                        // { north?: string, south?: string, bengal?: string, gujarat?: string, maharashtra?: string }
+  isPublished        Boolean                      @default(true)
+  status             String                       @default("PUBLISHED") // DRAFT, PUBLISHED, ARCHIVED
+  sourceVerified     Boolean                      @default(true)
+  sourceNotes        String?                      @db.Text
+  version            Int                          @default(1)
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+
+  rule                FestivalRule?
+  scriptureReferences FestivalScriptureReference[]
+  preferences         UserFestivalPreference[]
+  reminders           UserObservanceReminder[]
+
+  @@index([category])
+  @@index([status])
+  @@index([isPublished])
+  @@map("vedic_festivals")
+}
+
+model FestivalRule {
+  id                  String        @id @default(uuid())
+  festivalId          String        @unique
+  lunarMonth          String?       // Chaitra, Vaishakha, Jyeshtha, Ashadha, Shravana, Bhadrapada, Ashwina, Kartika, Margashirsha, Pausha, Magha, Phalguna, or ALL
+  paksha              String?       // Shukla, Krishna, or BOTH
+  tithi               Int?          // 1 to 30 (1-15 Shukla, 16-30 Krishna)
+  nakshatra           String?       // Rohini, Shravana, etc.
+  solarSign           String?       // Makara, Mesha, etc. for Sankranti
+  determinationRule   String        @default("UDAYA_TITHI") // UDAYA_TITHI, PRADOSHA_KAAL, NISHITA_KAAL, MADHYAHNA_KAAL, APARAHNA_KAAL, SANKRANTI_ENTRY, ARUNODAYA_EKADASHI
+  traditionConvention String        @default("ALL") // ALL, PURNIMANTA, AMANTA, SMARTHA, VAISHNAVA
+  paranaRule          String?       // HARI_VASARA_END, SUNRISE_NEXT_DAY, DWADASHI_EXPIRY
+  isRecurringMonthly  Boolean       @default(false)
+  customConfig        Json?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  festival VedicFestival @relation(fields: [festivalId], references: [id], onDelete: Cascade)
+
+  @@index([lunarMonth])
+  @@index([tithi])
+  @@index([determinationRule])
+  @@map("festival_rules")
+}
+
+model FestivalScriptureReference {
+  id                 String        @id @default(uuid())
+  festivalId         String
+  bookSlug           String        // "brihat-parashara-hora-shastra", "arogyanidhii", "phaladeepika"
+  bookTitle          String
+  chapterTitle       String?
+  verseNumber        String?
+  pageNumber         Int?
+  shlokaSanskrit     String        @db.Text
+  translationEn      String?       @db.Text
+  translationHi      String?       @db.Text
+  readerUrl          String?       // "/library/brihat-parashara-hora-shastra/pdf?page=12"
+  sourceVerification String        @default("VERIFIED") // VERIFIED, PENDING_REVIEW, EDITORIAL
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  festival VedicFestival @relation(fields: [festivalId], references: [id], onDelete: Cascade)
+
+  @@index([festivalId])
+  @@index([bookSlug])
+  @@map("festival_scripture_references")
+}
+
+model UserFestivalPreference {
+  id               String        @id @default(uuid())
+  userId           String
+  festivalId       String
+  isFavorite       Boolean       @default(true)
+  isFollowingVrat  Boolean       @default(false)
+  completedHistory Json?         // string[] e.g. ["2026-11-04"]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  festival VedicFestival @relation(fields: [festivalId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, festivalId])
+  @@index([userId])
+  @@index([festivalId])
+  @@map("user_festival_preferences")
+}
+
+model UserObservanceReminder {
+  id                String        @id @default(uuid())
+  userId            String
+  festivalId        String
+  eventDate         String        // "YYYY-MM-DD"
+  reminderType      String        @default("FESTIVAL_DAY") // FESTIVAL_DAY, VRAT_START, PARANA, PUJA_MUHURTA
+  reminderTime      String?       // "06:00"
+  timezone          String        @default("Asia/Kolkata")
+  status            String        @default("SCHEDULED") // SCHEDULED, SENT, CANCELLED
+  notificationTitle String
+  notificationBody  String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  festival VedicFestival @relation(fields: [festivalId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([festivalId])
+  @@index([eventDate])
+  @@index([status])
+  @@map("user_observance_reminders")
+}
+
+
+
+
 
 
 

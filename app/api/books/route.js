@@ -13,6 +13,8 @@ import {
 } from "@/server/security/authGuard";
 import { enqueueBookJob } from "@/server/jobs/queue";
 import { logAdminActivity } from "@/server/admin/audit";
+import { apiError } from "@/server/security/apiResponse";
+import { applyRateLimit, RATE_LIMIT_TIERS } from "@/server/security/rateLimiter";
 
 // Maximum upload size: 100MB
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
@@ -78,16 +80,15 @@ export async function GET(request) {
       },
     });
   } catch (error) {
-    console.error("GET /api/books error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch books", details: error.message },
-      { status: 500 }
-    );
+    return apiError(error, 500, "BOOKS_FETCH_FAILED", request);
   }
 }
 
 // POST /api/books (Upload PDF + Create Book Metadata)
 export async function POST(request) {
+  const rateLimitResponse = applyRateLimit(request, RATE_LIMIT_TIERS.MUTATION);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const auth = await requireManagePermission(request);
     if (auth.errorResponse) {
@@ -302,10 +303,6 @@ export async function POST(request) {
         { status: 422 }
       );
     }
-    console.error("POST /api/books error:", error);
-    return NextResponse.json(
-      { error: "Failed to create book", details: error.message },
-      { status: 500 }
-    );
+    return apiError(error, 500, "BOOK_CREATE_FAILED", request);
   }
 }

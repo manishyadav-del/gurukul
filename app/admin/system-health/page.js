@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import SystemHealthAdminClient from "@/components/admin/SystemHealthAdminClient";
+import { logger } from "@/server/monitoring/logger";
 import fs from "fs";
 import path from "path";
 
@@ -18,7 +19,7 @@ export default async function AdminSystemHealthPage() {
     dbStatus = "DEGRADED";
   }
 
-  const [queuedJobs, activeJobs, failedJobs] = await Promise.all([
+  const [queuedJobs, activeJobs, failedJobs, embeddingJobGroups, knowledgeJobGroups] = await Promise.all([
     prisma.ingestJob.count({ where: { status: "QUEUED" } }),
     prisma.ingestJob.count({
       where: {
@@ -26,7 +27,29 @@ export default async function AdminSystemHealthPage() {
       },
     }),
     prisma.ingestJob.count({ where: { status: "FAILED" } }),
+    prisma.embeddingBatchJob.groupBy({
+      by: ["status"],
+      _count: { id: true },
+    }).catch(() => []),
+    prisma.knowledgeExtractionJob.groupBy({
+      by: ["status"],
+      _count: { id: true },
+    }).catch(() => []),
   ]);
+
+  const embeddingJobsSummary = {
+    queued: embeddingJobGroups.find((g) => g.status === "QUEUED")?._count?.id || 0,
+    processing: embeddingJobGroups.find((g) => g.status === "PROCESSING")?._count?.id || 0,
+    completed: embeddingJobGroups.find((g) => g.status === "COMPLETED")?._count?.id || 0,
+    failed: embeddingJobGroups.find((g) => g.status === "FAILED")?._count?.id || 0,
+  };
+
+  const knowledgeJobsSummary = {
+    pending: knowledgeJobGroups.find((g) => g.status === "PENDING")?._count?.id || 0,
+    processing: knowledgeJobGroups.find((g) => g.status === "PROCESSING")?._count?.id || 0,
+    completed: knowledgeJobGroups.find((g) => g.status === "COMPLETED")?._count?.id || 0,
+    failed: knowledgeJobGroups.find((g) => g.status === "FAILED")?._count?.id || 0,
+  };
 
   const queueStatus =
     failedJobs > 5 ? "WARNING" : activeJobs > 0 || queuedJobs > 0 ? "BUSY" : "IDLE";
@@ -73,11 +96,17 @@ export default async function AdminSystemHealthPage() {
     services: {
       database: { status: dbStatus, latencyMs: dbLatencyMs, engine: "PostgreSQL" },
       jobQueue: { status: queueStatus, queuedJobs, activeJobs, failedJobs },
+      searchAndAi: { embeddingJobs: embeddingJobsSummary },
+      knowledgeJobs: {
+        status: knowledgeJobsSummary.failed > 0 ? "WARNING" : "HEALTHY",
+        ...knowledgeJobsSummary,
+      },
       email: emailProvider,
       astronomyEngine: ephemerisHealth,
       storage: { status: storageStatus },
       runtime,
     },
+    alerts: logger.getRecentAlerts ? logger.getRecentAlerts().slice(0, 15) : [],
   };
 
   return <SystemHealthAdminClient initialData={initialData} />;

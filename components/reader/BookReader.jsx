@@ -34,8 +34,13 @@ import {
   CheckCircle2,
   AlertTriangle,
   Network,
+  FolderPlus,
+  BookMarked,
+  ShieldCheck,
 } from "lucide-react";
 import BookPdfViewer from "./BookPdfViewer.jsx";
+import SourceProvenanceModal from "@/components/provenance/SourceProvenanceModal.jsx";
+import VerificationBadge from "@/components/provenance/VerificationBadge.jsx";
 
 export default function BookReader({
   book,
@@ -49,7 +54,7 @@ export default function BookReader({
   const router = useRouter();
 
   // Reader Customization Preferences
-  const [theme, setTheme] = useState("light"); // 'light' | 'sepia' | 'dark'
+  const [theme, setTheme] = useState("parchment"); // 'parchment' | 'light' | 'sepia' | 'dark'
   const [fontSize, setFontSize] = useState("base"); // 'sm' | 'base' | 'lg' | 'xl'
   const [lineSpacing, setLineSpacing] = useState("relaxed"); // 'normal' | 'relaxed' | 'loose'
   const [viewMode, setViewMode] = useState("magazine"); // 'magazine' | 'scroll'
@@ -76,6 +81,93 @@ export default function BookReader({
   const [aiLoading, setAiLoading] = useState(false);
   const [aiData, setAiData] = useState({});
   const [isSavingToWorkspace, setIsSavingToWorkspace] = useState(false);
+
+  // Research Collection & Deep Passage Navigation State
+  const [targetHighlightedPassageId, setTargetHighlightedPassageId] = useState(null);
+  const [activeCollectionModal, setActiveCollectionModal] = useState(null);
+  const [userCollections, setUserCollections] = useState([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState("");
+  const [newCollectionTitle, setNewCollectionTitle] = useState("");
+  const [collectionResearchNotes, setCollectionResearchNotes] = useState("");
+  const [isSavingToCollection, setIsSavingToCollection] = useState(false);
+  const [provenanceModalPassageId, setProvenanceModalPassageId] = useState(null);
+
+  const loadUserCollections = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await fetch("/api/research/collections");
+      if (res.ok) {
+        const data = await res.json();
+        setUserCollections(data.collections || []);
+        if (data.collections?.length > 0 && !selectedCollectionId) {
+          setSelectedCollectionId(data.collections[0].id);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load user collections:", e);
+    }
+  }, [user, selectedCollectionId]);
+
+  async function handleSavePassageToCollection() {
+    if (!activeCollectionModal) return;
+    setIsSavingToCollection(true);
+    try {
+      let colId = selectedCollectionId;
+      // If user typed a new collection title, create it first
+      if (newCollectionTitle.trim()) {
+        const createRes = await fetch("/api/research/collections", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: newCollectionTitle.trim() }),
+        });
+        if (createRes.ok) {
+          const createData = await createRes.json();
+          colId = createData.collection?.id;
+        }
+      }
+
+      const p = activeCollectionModal;
+      const res = await fetch("/api/research/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          collectionId: colId || null,
+          itemType: "SAVED_PASSAGE",
+          title: `${book.title} — Chapter ${chapter.chapterNumber || chapter.number || 1}, Passage #${p.passageNumber || p.number || 1}`,
+          query: p.text.slice(0, 120),
+          answer: p.text,
+          notes: collectionResearchNotes.trim() || null,
+          bookId: book.id,
+          chapterId: chapter.id,
+          passageId: p.id,
+          pageNumber: p.sourcePage,
+          citations: [
+            {
+              bookTitle: book.title,
+              author: book.author,
+              chapterTitle: chapter.title,
+              sourcePage: p.sourcePage,
+              passageId: p.id,
+              readerUrl: `/library/${book.slug || book.id}/${chapter.slug}?passageId=${p.id}#passage-${p.id}`,
+            },
+          ],
+        }),
+      });
+
+      if (res.ok) {
+        showToast("Passage added to Research Collection!");
+        setActiveCollectionModal(null);
+        setCollectionResearchNotes("");
+        setNewCollectionTitle("");
+      } else {
+        showToast("Failed to save to collection");
+      }
+    } catch (e) {
+      showToast("Error saving to collection");
+    } finally {
+      setIsSavingToCollection(false);
+    }
+  }
 
   const loadAiFeature = useCallback(async (passage, action) => {
     setAiLoading(true);
@@ -158,10 +250,10 @@ export default function BookReader({
     }
   }
 
-  // Load user notes for this chapter
+  // Load user notes for this chapter (only if authenticated)
   useEffect(() => {
     async function loadChapterNotes() {
-      if (!chapter?.id) return;
+      if (!chapter?.id || !user) return;
       try {
         const res = await fetch(`/api/user/notes?chapterId=${chapter.id}`);
         if (res.ok) {
@@ -369,9 +461,46 @@ export default function BookReader({
   const rightPage = magazinePages[rightPageIndex] || null;
   const hasAnyScans = pages && pages.some((p) => p.imageUrl);
 
-  // Track Reading Progress automatically in backend
+  // Deep passage navigation and visual highlight restoration from URL
+  useEffect(() => {
+    if (typeof window === "undefined" || !passages || passages.length === 0) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetPassageId = urlParams.get("passageId") || window.location.hash.replace("#passage-", "");
+
+    if (targetPassageId) {
+      // Find page chunk in magazine mode containing this passage
+      const chunkIdx = magazinePages.findIndex((chunk) =>
+        chunk.passages.some((p) => p.id === targetPassageId)
+      );
+      if (chunkIdx !== -1) {
+        const spreadIdx = Math.floor(chunkIdx / 2);
+        setCurrentSpreadIndex(spreadIdx);
+      }
+      setTargetHighlightedPassageId(targetPassageId);
+
+      // Scroll after DOM layout settles
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`passage-${targetPassageId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 400);
+
+      // Clear highlight after 4 seconds
+      const clearTimer = setTimeout(() => {
+        setTargetHighlightedPassageId(null);
+      }, 4500);
+
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(clearTimer);
+      };
+    }
+  }, [passages, magazinePages]);
+
+  // Track Reading Progress automatically in backend (only for authenticated users)
   const recordProgress = useCallback(async (passageId = null) => {
-    if (!book?.id) return;
+    if (!book?.id || !user) return;
     const totalChapters = chapters.length || 1;
     const progressPercent = Math.round(((currentIndex + 1) / totalChapters) * 100);
 
@@ -460,6 +589,20 @@ export default function BookReader({
 
   // Theme style mappings
   const themeClasses = {
+    parchment: {
+      bg: "bg-[#faf6ef]",
+      text: "text-[#241e17]",
+      cardBg: "bg-[#f5efe4]",
+      cardBorder: "border-[#e5d8c3]",
+      verseBg: "bg-[#eedfc9]/70",
+      verseBorder: "border-[#b89358]",
+      verseText: "text-[#1c160e]",
+      headerBorder: "border-[#e5d8c3]",
+      navBg: "bg-[#faf6ef]/95",
+      mutedText: "text-[#7a6b57]",
+      accent: "text-[#13382c]",
+      accentBg: "bg-[#13382c]",
+    },
     light: {
       bg: "bg-[#FAFAF9]",
       text: "text-stone-900",
@@ -502,7 +645,20 @@ export default function BookReader({
       accent: "text-[#F59E0B]",
       accentBg: "bg-[#D97706]",
     },
-  }[theme];
+  }[theme] || {
+    bg: "bg-[#faf6ef]",
+    text: "text-[#241e17]",
+    cardBg: "bg-[#f5efe4]",
+    cardBorder: "border-[#e5d8c3]",
+    verseBg: "bg-[#eedfc9]/70",
+    verseBorder: "border-[#b89358]",
+    verseText: "text-[#1c160e]",
+    headerBorder: "border-[#e5d8c3]",
+    navBg: "bg-[#faf6ef]/95",
+    mutedText: "text-[#7a6b57]",
+    accent: "text-[#13382c]",
+    accentBg: "bg-[#13382c]",
+  };
 
   // Font size mappings
   const fontSizes = {
@@ -531,6 +687,7 @@ export default function BookReader({
     const isHeading = passage.passageType === "HEADING";
     const isSubheading = passage.passageType === "SUBHEADING";
     const isFootnote = passage.passageType === "FOOTNOTE";
+    const isDeepLinked = passage.id === targetHighlightedPassageId;
 
     // Color mapping for highlights
     const highlightClass = isHighlighted
@@ -543,6 +700,10 @@ export default function BookReader({
         : "bg-amber-50/70 border-amber-300 ring-1 ring-amber-400/40"
       : "";
 
+    const deepLinkClass = isDeepLinked
+      ? "ring-4 ring-amber-500/80 bg-amber-100/80 shadow-lg scale-[1.01] duration-500"
+      : "";
+
     return (
       <article
         key={passage.id}
@@ -551,7 +712,7 @@ export default function BookReader({
           isMagazine
             ? "p-4 sm:p-5 rounded-xl border"
             : "p-5 sm:p-6 rounded-2xl border"
-        } ${isHighlighted ? highlightClass : themeClasses.cardBorder} ${
+        } ${deepLinkClass} ${isHighlighted ? highlightClass : themeClasses.cardBorder} ${
           isVerse
             ? `${themeClasses.verseBg} border-l-4 ${themeClasses.verseBorder}`
             : `${themeClasses.cardBg}`
@@ -591,6 +752,31 @@ export default function BookReader({
               <Sparkles className="w-4 h-4 text-emerald-800" />
             </button>
 
+            {/* Save to Research Collection Button */}
+            <button
+              onClick={() => {
+                if (!user) {
+                  showToast("Sign in to save to research collection");
+                  return;
+                }
+                setActiveCollectionModal(passage);
+                loadUserCollections();
+              }}
+              className="p-1.5 rounded-lg text-amber-800 bg-amber-100/70 hover:bg-amber-200 transition opacity-80 group-hover:opacity-100"
+              title="Add to Research Collection"
+            >
+              <FolderPlus className="w-4 h-4 text-amber-800" />
+            </button>
+
+            {/* Inspect Source Provenance & Verification Badge */}
+            <button
+              onClick={() => setProvenanceModalPassageId(passage.id)}
+              className="p-1.5 rounded-lg text-emerald-800 bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-300/70 transition opacity-80 group-hover:opacity-100"
+              title="Inspect Scholarly Source Provenance & Verification"
+            >
+              <ShieldCheck className="w-4 h-4 text-emerald-700" />
+            </button>
+
             {/* Note / Highlight Button */}
             <button
               onClick={() => openNoteModal(passage)}
@@ -626,7 +812,7 @@ export default function BookReader({
         {/* Passage Body */}
         <div className={`${fontSizes} ${lineSpacings}`}>
           {isVerse ? (
-            <p className={`font-serif whitespace-pre-wrap ${themeClasses.verseText} font-medium leading-relaxed`}>
+            <p className={`font-serif whitespace-pre-wrap ${themeClasses.verseText} font-medium leading-relaxed tracking-wide [text-rendering:optimizeLegibility] break-words`}>
               {passage.text}
             </p>
           ) : isHeading ? (
@@ -977,7 +1163,17 @@ export default function BookReader({
               <label className={`text-xs font-bold uppercase tracking-wider ${themeClasses.mutedText}`}>
                 Background Theme
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button
+                  onClick={() => handleThemeChange("parchment")}
+                  className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition ${
+                    theme === "parchment" ? "border-[#13382c] ring-2 ring-[#13382c]/20 bg-[#faf6ef] text-[#13382c] font-bold" : "border-stone-300 bg-stone-50 text-stone-600"
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4 text-[#d4a359]" />
+                  <span className="text-xs font-semibold">Parchment</span>
+                </button>
+
                 <button
                   onClick={() => handleThemeChange("light")}
                   className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition ${
@@ -1076,6 +1272,7 @@ export default function BookReader({
             title={book.title}
             author={book.author}
             bookId={book.id}
+            user={user}
           />
         </main>
       ) : viewMode === "magazine" ? (
@@ -1372,6 +1569,106 @@ export default function BookReader({
                   {isSavingNote ? "Saving..." : "Save Note"}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Research Collection Modal */}
+      {activeCollectionModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-xl bg-amber-100 text-amber-900">
+                  <FolderPlus className="w-5 h-5 text-amber-900" />
+                </span>
+                <div>
+                  <h3 className="font-bold text-stone-900 font-serif text-base">
+                    Save Passage to Research Collection
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    {book.title} • Ch. {chapter.chapterNumber || chapter.number || 1}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveCollectionModal(null)}
+                className="text-stone-400 hover:text-stone-700 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-[#fcfaf5] p-3 rounded-xl border border-amber-900/10 text-xs text-stone-700 font-serif line-clamp-3">
+              "{activeCollectionModal.text}"
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Select Existing Collection:
+                </label>
+                {userCollections.length > 0 ? (
+                  <select
+                    value={selectedCollectionId}
+                    onChange={(e) => setSelectedCollectionId(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl p-2.5 text-stone-800 font-medium"
+                  >
+                    {userCollections.map((col) => (
+                      <option key={col.id} value={col.id}>
+                        {col.title} ({col.itemCount || 0} items)
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-stone-500 italic py-1">No collections yet. Create your first one below!</p>
+                )}
+              </div>
+
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Or Create New Collection:
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Navagraha Study, Brihat Jataka Shlokas..."
+                  value={newCollectionTitle}
+                  onChange={(e) => setNewCollectionTitle(e.target.value)}
+                  className="w-full bg-white border border-stone-200 rounded-xl p-2.5 text-stone-800"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Personal Research Notes (Optional):
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Add your scholarly interpretation, comparative notes, or cross-references..."
+                  value={collectionResearchNotes}
+                  onChange={(e) => setCollectionResearchNotes(e.target.value)}
+                  className="w-full bg-white border border-stone-200 rounded-xl p-2.5 text-stone-800"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+              <button
+                type="button"
+                onClick={() => setActiveCollectionModal(null)}
+                className="px-4 py-2 rounded-xl border border-stone-200 text-stone-600 text-xs font-semibold hover:bg-stone-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSavingToCollection || (!selectedCollectionId && !newCollectionTitle.trim())}
+                onClick={handleSavePassageToCollection}
+                className="px-5 py-2 rounded-xl bg-[#13382c] hover:bg-[#1a4a3b] text-white text-xs font-bold transition shadow-xs disabled:opacity-50"
+              >
+                {isSavingToCollection ? "Saving..." : "Save to Collection"}
+              </button>
             </div>
           </div>
         </div>
@@ -1684,6 +1981,13 @@ export default function BookReader({
           </div>
         </div>
       )}
+
+      {/* Scholarly Source Provenance & Folio Evidence Modal */}
+      <SourceProvenanceModal
+        passageId={provenanceModalPassageId}
+        isOpen={Boolean(provenanceModalPassageId)}
+        onClose={() => setProvenanceModalPassageId(null)}
+      />
     </div>
   );
 }

@@ -710,14 +710,23 @@ export default function BookLifecycleManagerClient({ initialBook, initialReadine
       {activeTab === "chapters" && (
         <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-            <h3 className="font-serif font-bold text-base text-stone-900">Structured Chapters</h3>
-            <Link
-              href={`/admin/books/${book.id}/structure`}
-              className="px-3 py-1.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>Open Structure Editor</span>
-            </Link>
+            <h3 className="font-serif font-bold text-base text-stone-900">Structured Chapters & Vedic Manuscript</h3>
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/admin/books/${book.id}/manuscript`}
+                className="px-3 py-1.5 rounded-xl bg-[#13382c] hover:bg-[#1a4a3b] text-[#d4a359] text-xs font-semibold flex items-center gap-1.5 shadow-xs border border-[#d4a359]/40"
+              >
+                <Layers className="w-3.5 h-3.5 text-[#d4a359]" />
+                <span>Manuscript Control Studio</span>
+              </Link>
+              <Link
+                href={`/admin/books/${book.id}/structure`}
+                className="px-3 py-1.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Open Structure Editor</span>
+              </Link>
+            </div>
           </div>
 
           <div className="space-y-2 text-xs">

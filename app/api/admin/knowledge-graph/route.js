@@ -149,10 +149,11 @@ export async function POST(request) {
     }
 
     if (action === "approve_relationship") {
-      const { relationshipId } = body;
+      const { relationshipId, reviewerNotes } = body;
       const updated = await adminApproveRelationship({
         relationshipId,
         reviewer: user.email || user.name || "Admin",
+        reviewerNotes,
       });
 
       await logAdminActivity({
@@ -163,18 +164,19 @@ export async function POST(request) {
         targetResource: "KnowledgeRelationship",
         targetId: relationshipId,
         status: "SUCCESS",
-        details: { status: "APPROVED" },
+        details: { status: "APPROVED", reviewerNotes },
       });
 
       return NextResponse.json({ success: true, relationship: updated });
     }
 
     if (action === "reject_relationship") {
-      const { relationshipId, reason } = body;
+      const { relationshipId, reason, reviewerNotes } = body;
       const updated = await adminRejectRelationship({
         relationshipId,
         reviewer: user.email || user.name || "Admin",
         reason,
+        reviewerNotes,
       });
 
       await logAdminActivity({
@@ -185,7 +187,7 @@ export async function POST(request) {
         targetResource: "KnowledgeRelationship",
         targetId: relationshipId,
         status: "SUCCESS",
-        details: { status: "REJECTED", reason },
+        details: { status: "REJECTED", reason, reviewerNotes },
       });
 
       return NextResponse.json({ success: true, relationship: updated });

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAdmin } from "@/server/admin/auth";
 import { PERMISSIONS } from "@/server/admin/permissions";
-import { getQueueMetrics, enqueueBookJob } from "@/server/jobs/queue";
+import { getQueueMetrics, enqueueBookJob, recoverStalledJobs, requestJobCancellation } from "@/server/jobs/queue";
 import { retryPage } from "@/server/jobs/retryPage";
 import { logAdminActivity } from "@/server/admin/audit";
 
@@ -182,6 +182,123 @@ export async function POST(request) {
         success: true,
         results,
         message: `Processed ${results.length} pages: ${results.filter((r) => r.success).length} succeeded, ${results.filter((r) => !r.success).length} failed.`,
+      });
+    }
+
+    if (action === "recover_stalled_jobs") {
+      const recovered = await recoverStalledJobs();
+      await logAdminActivity({
+        actorId: user.id,
+        actorEmail: user.email,
+        actorRole: user.role,
+        action: "OCR_RECOVER_STALLED_JOBS",
+        targetResource: "IngestJob",
+        status: "SUCCESS",
+        details: { recoveredCount: recovered.recoveredCount },
+      });
+
+      return NextResponse.json({
+        success: true,
+        recoveredCount: recovered.recoveredCount,
+        message: `Resurrected ${recovered.recoveredCount} stalled jobs back to QUEUED status.`,
+      });
+    }
+
+    if (action === "cancel_job") {
+      const { jobId } = body;
+      if (!jobId) return NextResponse.json({ error: "jobId required" }, { status: 400 });
+
+      await requestJobCancellation(jobId);
+      await logAdminActivity({
+        actorId: user.id,
+        actorEmail: user.email,
+        actorRole: user.role,
+        action: "OCR_CANCEL_JOB",
+        targetResource: "IngestJob",
+        targetId: jobId,
+        status: "SUCCESS",
+      });
+
+      return NextResponse.json({ success: true, message: `Job ${jobId} cancellation requested.` });
+    }
+
+    if (action === "retry_job") {
+      const { bookId } = body;
+      if (!bookId) return NextResponse.json({ error: "bookId required" }, { status: 400 });
+
+      const enqueued = await enqueueBookJob(bookId, { forceRetry: true });
+      await logAdminActivity({
+        actorId: user.id,
+        actorEmail: user.email,
+        actorRole: user.role,
+        action: "OCR_RETRY_BOOK_JOB",
+        targetResource: "IngestJob",
+        targetId: enqueued.job?.id,
+        status: "SUCCESS",
+        details: { bookId },
+      });
+
+      return NextResponse.json({
+        success: true,
+        job: enqueued.job,
+        message: `Book processing job re-enqueued successfully.`,
+      });
+    }
+
+    if (action === "reprocess_range") {
+      const { bookId, startPage, endPage, dpi = 300 } = body;
+      if (!bookId) return NextResponse.json({ error: "bookId required" }, { status: 400 });
+      const start = parseInt(startPage, 10);
+      const end = parseInt(endPage, 10);
+      if (isNaN(start) || isNaN(end) || start > end) {
+        return NextResponse.json({ error: "Valid startPage and endPage required" }, { status: 400 });
+      }
+
+      const pagesToReprocess = await prisma.bookPage.findMany({
+        where: {
+          bookId,
+          pageNumber: { gte: start, lte: end },
+          proofread: false, // Never overwrite human proofread text
+        },
+        orderBy: { pageNumber: "asc" },
+        take: 30, // Cap to 30 pages to protect worker capacity
+        select: { id: true, pageNumber: true },
+      });
+
+      const results = [];
+      for (const p of pagesToReprocess) {
+        try {
+          await retryPage(p.id, {
+            forceOcr: true,
+            dpi,
+            forceOverwriteProofread: false,
+          });
+          results.push({ pageId: p.id, pageNumber: p.pageNumber, success: true });
+        } catch (pageErr) {
+          results.push({ pageId: p.id, pageNumber: p.pageNumber, success: false, error: pageErr.message });
+        }
+      }
+
+      await logAdminActivity({
+        actorId: user.id,
+        actorEmail: user.email,
+        actorRole: user.role,
+        action: "OCR_REPROCESS_PAGE_RANGE",
+        targetResource: "BookPage",
+        status: "SUCCESS",
+        details: {
+          bookId,
+          startPage: start,
+          endPage: end,
+          eligibleCount: pagesToReprocess.length,
+          successful: results.filter((r) => r.success).length,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        results,
+        message: `Reprocessed ${results.filter((r) => r.success).length} of ${pagesToReprocess.length} eligible pages in range [${start} - ${end}].`,
       });
     }
 

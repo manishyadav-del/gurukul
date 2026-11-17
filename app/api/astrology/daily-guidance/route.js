@@ -1,9 +1,10 @@
 /**
  * GET /api/astrology/daily-guidance
  * 
- * Returns daily Panchang, traditional Vedic remedies, deity recommendations,
- * mindful daily habits, traditional avoidance guidelines, and optional personalized
- * chart-based guidance.
+ * Returns unified daily astrology, personalized guidance across 6 life spheres,
+ * verified Vedic remedies, dedicated 8-category Puja recommendations, Sanskrit
+ * Mantra Intelligence with Anvaya, daily Chakra & Kundalini guidance, and
+ * guided spiritual practice timer details.
  * 
  * Query parameters:
  *   date      - YYYY-MM-DD (defaults to local date)
@@ -19,6 +20,7 @@ import { NextResponse } from "next/server.js";
 import prisma from "../../../../lib/prisma.js";
 import { getAuthenticatedUser } from "../../../../server/security/authGuard.js";
 import { computePanchang } from "../../../../server/astrology/panchang.js";
+import { evaluatePredictiveTransits } from "../../../../server/astrology/transitIntelligence.js";
 import { getDailySpiritualGuidance } from "../../../../server/astrology/remedyEngine.js";
 
 export async function GET(request) {
@@ -51,6 +53,23 @@ export async function GET(request) {
     const authUser = await getAuthenticatedUser(request);
     const userId = authUser?.id || null;
 
+    let userProfilesList = [];
+    if (userId) {
+      userProfilesList = await prisma.birthProfile.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          name: true,
+          birthDate: true,
+          birthPlace: true,
+          latitude: true,
+          longitude: true,
+          timezone: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }
+
     // Optional birth profile personalization
     let birthProfile = null;
     if (profileId) {
@@ -64,7 +83,6 @@ export async function GET(request) {
       });
 
       if (profile) {
-        // Enforce ownership security
         if (profile.userId && (!authUser || (profile.userId !== authUser.id && authUser.role !== "ADMIN"))) {
           return NextResponse.json(
             { error: "Forbidden: Unauthorized access to birth profile" },
@@ -74,7 +92,7 @@ export async function GET(request) {
         birthProfile = profile;
       }
     } else if (authUser?.id) {
-      // If user is logged in, optionally fetch their primary birth profile
+      // If user is logged in, fetch their primary birth profile
       const userProfile = await prisma.birthProfile.findFirst({
         where: { userId: authUser.id },
         include: {
@@ -98,19 +116,47 @@ export async function GET(request) {
       timezone,
     });
 
-    // 2. Verified spiritual remedies and guidance synthesis
+    // 2. Compute Predictive Gochara Transits if chart is available
+    const natalChartData = birthProfile?.birthChart?.chartData || null;
+    let planetaryTransits = null;
+    if (natalChartData && natalChartData.planets && natalChartData.ascendant) {
+      try {
+        planetaryTransits = evaluatePredictiveTransits(natalChartData, reportDate, tzOffset, language);
+      } catch (tErr) {
+        console.warn("[daily-guidance] Transit calculation error:", tErr.message);
+      }
+    }
+
+    // 3. Verified spiritual remedies, puja, and guidance synthesis
     const guidance = await getDailySpiritualGuidance({
       panchang,
       date: reportDate,
       userId,
       birthProfile,
+      chart: natalChartData,
+      transits: planetaryTransits,
       language,
     });
 
     const response = NextResponse.json({
       success: true,
       panchang,
+      planetaryTransits,
       guidance,
+      chart: natalChartData,
+      profile: birthProfile
+        ? {
+            id: birthProfile.id,
+            name: birthProfile.name,
+            birthDate: birthProfile.birthDate,
+            birthTime: birthProfile.birthTime,
+            birthPlace: birthProfile.birthPlace,
+            latitude: birthProfile.latitude,
+            longitude: birthProfile.longitude,
+            timezone: birthProfile.timezone,
+          }
+        : null,
+      userProfiles: userProfilesList,
       meta: {
         date: reportDate,
         latitude: lat,
@@ -118,6 +164,7 @@ export async function GET(request) {
         timezone,
         language,
         isPersonalized: Boolean(birthProfile),
+        profileName: birthProfile?.name || null,
       },
     });
 

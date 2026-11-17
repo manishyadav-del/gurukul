@@ -24,6 +24,26 @@ export async function runEmbeddingBatchJob({
   force = false,
   bookId = null,
 } = {}) {
+  // 0. Deduplication check: Prevent concurrent duplicate batch runs
+  const activeJob = await prisma.embeddingBatchJob.findFirst({
+    where: {
+      status: "PROCESSING",
+      createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (activeJob && !force) {
+    return {
+      success: true,
+      jobId: activeJob.id,
+      status: "ALREADY_PROCESSING",
+      message: `An embedding batch job is already active (${activeJob.id}).`,
+      processedCount: activeJob.processedCount,
+      totalCount: activeJob.totalCount,
+    };
+  }
+
   // 1. Create Job Record
   const job = await prisma.embeddingBatchJob.create({
     data: {

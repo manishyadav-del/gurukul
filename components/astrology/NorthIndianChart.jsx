@@ -9,7 +9,7 @@ export default function NorthIndianChart({
 }) {
   if (!chart || !chart.houses) {
     return (
-      <div className="w-full aspect-square max-w-[440px] mx-auto border-2 border-dashed border-amber-300 rounded-2xl flex items-center justify-center text-stone-400 text-sm">
+      <div className="w-full aspect-square max-w-[440px] mx-auto border-2 border-dashed border-amber-300 rounded-2xl flex items-center justify-center text-stone-600 font-medium text-sm bg-amber-50/30">
         Chart data unavailable
       </div>
     );
@@ -77,13 +77,16 @@ export default function NorthIndianChart({
     <div className={`w-full aspect-square max-w-[440px] mx-auto select-none ${className}`}>
       <svg
         viewBox="0 0 400 400"
+        role="img"
+        aria-label="Vedic North Indian Kundli Chart"
         className="w-full h-full bg-[#fdfbf7] rounded-2xl shadow-md border border-[#c99a53]"
       >
+        <title>Vedic North Indian Kundli Birth Chart</title>
         {/* Background Subtle Gradient */}
         <defs>
           <radialGradient id="kundliGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#fff9ee" />
-            <stop offset="100%" stopColor="#f7ecd7" />
+            <stop offset="0%" stopColor="#fffbf2" />
+            <stop offset="100%" stopColor="#f5e8d0" />
           </radialGradient>
         </defs>
         <rect width="400" height="400" fill="url(#kundliGlow)" rx="16" />
@@ -95,7 +98,7 @@ export default function NorthIndianChart({
           width="388"
           height="388"
           fill="none"
-          stroke="#b88338"
+          stroke="#9a5a1f"
           strokeWidth="2.5"
           rx="12"
         />
@@ -105,21 +108,21 @@ export default function NorthIndianChart({
           width="376"
           height="376"
           fill="none"
-          stroke="#d4a359"
-          strokeWidth="1"
+          stroke="#c4903c"
+          strokeWidth="1.2"
           strokeDasharray="4 2"
           rx="8"
         />
 
         {/* Diagonal Cross Lines */}
-        <line x1="12" y1="12" x2="388" y2="388" stroke="#b88338" strokeWidth="2" />
-        <line x1="388" y1="12" x2="12" y2="388" stroke="#b88338" strokeWidth="2" />
+        <line x1="12" y1="12" x2="388" y2="388" stroke="#9a5a1f" strokeWidth="2" />
+        <line x1="388" y1="12" x2="12" y2="388" stroke="#9a5a1f" strokeWidth="2" />
 
         {/* Central Diamond Lines */}
         <polygon
           points="200,12 388,200 200,388 12,200"
           fill="none"
-          stroke="#b88338"
+          stroke="#9a5a1f"
           strokeWidth="2"
         />
 
@@ -143,11 +146,11 @@ export default function NorthIndianChart({
                 y={pos.signY}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fill="#a0441a"
-                fontSize="12"
-                fontWeight="bold"
+                fill="#8c320d"
+                fontSize="13"
+                fontWeight="800"
                 fontFamily="serif"
-                opacity="0.85"
+                opacity="0.95"
               >
                 {signNum}
               </text>
@@ -155,9 +158,9 @@ export default function NorthIndianChart({
               {/* Planets inside this house */}
               <g transform={`translate(${pos.cx}, ${pos.cy})`}>
                 {planetsInHouse.map((p, idx) => {
-                  const offsetY = (idx - (planetsInHouse.length - 1) / 2) * 13;
+                  const offsetY = (idx - (planetsInHouse.length - 1) / 2) * 14.5;
                   const isSunOrMoon = p.fullName === "SUN" || p.fullName === "MOON";
-                  const isRetro = p.name.includes("(R)");
+                  const isRetro = p.name.includes("(R)") || p.name.includes("(व)");
 
                   return (
                     <text
@@ -166,9 +169,9 @@ export default function NorthIndianChart({
                       y={offsetY}
                       textAnchor="middle"
                       dominantBaseline="central"
-                      fill={isRetro ? "#b91c1c" : isSunOrMoon ? "#92400e" : "#1e293b"}
-                      fontSize={planetsInHouse.length > 3 ? "10" : "11"}
-                      fontWeight="bold"
+                      fill={isRetro ? "#991b1b" : isSunOrMoon ? "#853606" : "#0f172a"}
+                      fontSize={planetsInHouse.length > 3 ? "11" : "12.5"}
+                      fontWeight="700"
                       fontFamily="system-ui, sans-serif"
                       onClick={(e) => {
                         if (onPlanetClick) {
@@ -180,7 +183,7 @@ export default function NorthIndianChart({
                     >
                       {p.name}
                       {p.degree !== "" && (
-                        <tspan fontSize="8" fill="#64748b" dx="2">
+                        <tspan fontSize="9.5" fill="#334155" fontWeight="600" dx="2.5">
                           {p.degree}°
                         </tspan>
                       )}
@@ -193,14 +196,14 @@ export default function NorthIndianChart({
         })}
 
         {/* Central Emblem / Shloka Marker */}
-        <circle cx="200" cy="200" r="14" fill="#fff5e6" stroke="#b88338" strokeWidth="1.5" />
+        <circle cx="200" cy="200" r="14" fill="#fff5e6" stroke="#9a5a1f" strokeWidth="1.8" />
         <text
           x="200"
           y="201"
           textAnchor="middle"
           dominantBaseline="central"
-          fill="#92400e"
-          fontSize="11"
+          fill="#853606"
+          fontSize="12"
           fontWeight="bold"
           fontFamily="serif"
         >

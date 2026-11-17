@@ -2297,6 +2297,26 @@ export async function extractAndStorePassageKnowledge({
     throw new Error("Text content is required for knowledge extraction.");
   }
 
+  // Deduplication check: Avoid multiple simultaneous extractions on the same passage
+  if (passageId) {
+    const existingJob = await prisma.knowledgeExtractionJob.findFirst({
+      where: {
+        passageId,
+        status: "PROCESSING",
+        startedAt: { gte: new Date(Date.now() - 5 * 60 * 1000) },
+      },
+    });
+    if (existingJob) {
+      return {
+        success: true,
+        deduplicated: true,
+        jobId: existingJob.id,
+        status: "ALREADY_PROCESSING",
+        message: "Extraction is already in progress for this passage.",
+      };
+    }
+  }
+
   // 1. Create KnowledgeExtractionJob record
   const job = await prisma.knowledgeExtractionJob.create({
     data: {
@@ -2497,9 +2517,9 @@ export async function extractAndStorePassageKnowledge({
 }
 
 /**
- * Admin: Approve (verify) an AI-suggested relationship.
+ * Admin: Approve (verify) an AI-suggested relationship with evidence inspection.
  */
-export async function adminApproveRelationship({ relationshipId, reviewer = "Admin" }) {
+export async function adminApproveRelationship({ relationshipId, reviewer = "Admin", reviewerNotes = null }) {
   if (!relationshipId) throw new Error("relationshipId is required.");
 
   return await prisma.knowledgeRelationship.update({
@@ -2508,6 +2528,13 @@ export async function adminApproveRelationship({ relationshipId, reviewer = "Adm
       status: "APPROVED",
       reviewedBy: reviewer,
       reviewedAt: new Date(),
+      reviewerNotes: reviewerNotes || undefined,
+    },
+    include: {
+      sourceConcept: { select: { id: true, name: true, slug: true } },
+      targetConcept: { select: { id: true, name: true, slug: true } },
+      sourcePassage: { select: { id: true, text: true, sourcePage: true } },
+      sourceBook: { select: { id: true, title: true, slug: true } },
     },
   });
 }
@@ -2515,7 +2542,7 @@ export async function adminApproveRelationship({ relationshipId, reviewer = "Adm
 /**
  * Admin: Reject a relationship.
  */
-export async function adminRejectRelationship({ relationshipId, reviewer = "Admin", reason = null }) {
+export async function adminRejectRelationship({ relationshipId, reviewer = "Admin", reason = null, reviewerNotes = null }) {
   if (!relationshipId) throw new Error("relationshipId is required.");
 
   return await prisma.knowledgeRelationship.update({
@@ -2524,7 +2551,12 @@ export async function adminRejectRelationship({ relationshipId, reviewer = "Admi
       status: "REJECTED",
       reviewedBy: reviewer,
       reviewedAt: new Date(),
+      reviewerNotes: reviewerNotes || reason || undefined,
       metadata: reason ? { rejectionReason: reason } : undefined,
+    },
+    include: {
+      sourceConcept: { select: { id: true, name: true, slug: true } },
+      targetConcept: { select: { id: true, name: true, slug: true } },
     },
   });
 }

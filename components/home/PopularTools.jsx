@@ -12,38 +12,38 @@ export default function PopularTools() {
   const tools = [
     {
       title: "Planetary Positions",
-      desc: "Current transit and retrograde",
+      desc: "Current transit & retrograde",
       icon: Compass,
-      color: "bg-amber-100 text-amber-700",
+      color: "bg-amber-100 text-amber-900 border border-amber-200",
       href: "/astrology",
     },
     {
       title: "Dasha Calculator",
-      desc: "Vimshottari and other dashas",
+      desc: "Vimshottari and Mahadashas",
       icon: CalendarDays,
-      color: "bg-rose-100 text-rose-700",
+      color: "bg-rose-100 text-rose-900 border border-rose-200",
       href: "/astrology",
     },
     {
-      title: "Compatibility",
-      desc: "Relationship analysis",
+      title: "Kundli Matching",
+      desc: "Guna Milan analysis",
       icon: HeartHandshake,
-      color: "bg-purple-100 text-purple-700",
+      color: "bg-purple-100 text-purple-900 border border-purple-200",
       href: "/astrology",
     },
     {
-      title: "Remedies",
-      desc: "Traditional upayas",
+      title: "Vedic Remedies",
+      desc: "Traditional shastric upayas",
       icon: Sparkles,
-      color: "bg-emerald-100 text-emerald-700",
+      color: "bg-emerald-100 text-emerald-900 border border-emerald-200",
       href: "/ai/chat",
     },
     {
-      title: "Panchang",
-      desc: "Daily tithi, nakshatra, yoga",
+      title: "Daily Panchang",
+      desc: "Tithi, Nakshatra, Yoga, Karana",
       icon: Calendar,
-      color: "bg-pink-100 text-pink-700",
-      href: "/astrology",
+      color: "bg-pink-100 text-pink-900 border border-pink-200",
+      href: "/astrology/daily",
     },
   ];
 
@@ -56,10 +56,10 @@ export default function PopularTools() {
         </h3>
         <Link
           href="/astrology"
-          className="text-xs font-semibold text-amber-800 hover:text-amber-900 transition flex items-center"
+          className="text-xs font-semibold text-amber-900 hover:text-amber-950 transition flex items-center min-h-[44px]"
         >
           <span>View All</span>
-          <ChevronRight className="w-3.5 h-3.5" />
+          <ChevronRight className="w-4 h-4 ml-0.5" />
         </Link>
       </div>
 
@@ -71,7 +71,7 @@ export default function PopularTools() {
             <Link
               key={tool.title}
               href={tool.href}
-              className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-stone-50 transition group"
+              className="flex items-center gap-3 p-2 rounded-xl hover:bg-stone-50 transition group min-h-[44px]"
             >
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${tool.color}`}
@@ -79,10 +79,10 @@ export default function PopularTools() {
                 <Icon className="w-4 h-4" />
               </div>
               <div className="min-w-0">
-                <h4 className="text-xs font-bold text-stone-900 group-hover:text-amber-800 transition truncate">
+                <h4 className="text-xs sm:text-sm font-bold text-stone-900 group-hover:text-amber-900 transition truncate">
                   {tool.title}
                 </h4>
-                <p className="text-[11px] text-stone-400 truncate">{tool.desc}</p>
+                <p className="text-xs text-stone-600 truncate font-medium">{tool.desc}</p>
               </div>
             </Link>
           );

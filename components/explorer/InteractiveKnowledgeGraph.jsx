@@ -558,8 +558,8 @@ export default function InteractiveKnowledgeGraph({
                     <text
                       x={(src.x + tgt.x) / 2}
                       y={(src.y + tgt.y) / 2 - 6}
-                      fill="#92400e"
-                      fontSize="9"
+                      fill="#78350f"
+                      fontSize="11"
                       fontFamily="sans-serif"
                       fontWeight="bold"
                       textAnchor="middle"
@@ -634,7 +634,7 @@ export default function InteractiveKnowledgeGraph({
                     textAnchor="middle"
                     dy="4"
                     fill="#ffffff"
-                    fontSize={node.sanskrit ? "11" : "9"}
+                    fontSize={node.sanskrit ? "13" : "11"}
                     fontFamily="serif"
                     fontWeight="bold"
                     className="pointer-events-none select-none"
@@ -645,11 +645,11 @@ export default function InteractiveKnowledgeGraph({
                   {/* Label Below Node */}
                   <text
                     textAnchor="middle"
-                    dy={radius + 14}
-                    fill="#1f2937"
-                    fontSize="11"
+                    dy={radius + 15}
+                    fill="#0f172a"
+                    fontSize="12.5"
                     fontFamily="sans-serif"
-                    fontWeight={isSelected ? "bold" : "600"}
+                    fontWeight={isSelected ? "800" : "700"}
                     className="pointer-events-none select-none drop-shadow-xs"
                   >
                     {node.name.length > 20 ? `${node.name.slice(0, 18)}...` : node.name}
@@ -659,10 +659,11 @@ export default function InteractiveKnowledgeGraph({
                   {node.subCategory && (
                     <text
                       textAnchor="middle"
-                      dy={radius + 26}
-                      fill="#6b7280"
-                      fontSize="9"
+                      dy={radius + 28}
+                      fill="#475569"
+                      fontSize="10"
                       fontFamily="monospace"
+                      fontWeight="600"
                       className="pointer-events-none select-none uppercase"
                     >
                       {node.subCategory}

@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import prisma from "../../lib/prisma.js";
 
 /**
  * In-memory buffer for testing and development auditing.
@@ -349,3 +350,205 @@ export async function sendInvitationAcceptedNotification({
 
   return { success: true };
 }
+
+/**
+ * Generates a 6-digit numeric OTP code and cryptographic hash for email verification.
+ */
+export function generateEmailOtp() {
+  const otpCode = String(crypto.randomInt(100000, 1000000));
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const tokenHash = hashInvitationToken(rawToken);
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+  return { otpCode, rawToken, tokenHash, expiresAt };
+}
+
+/**
+ * Renders an authentic Vedic-branded HTML email for email verification.
+ */
+function renderVerificationEmailHtml({ name, otpCode, email }) {
+  const greeting = name ? `Namaste ${name},` : "Namaste Seeker,";
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your Gurukul Account</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f6f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #2c2925;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8f6f0; padding: 32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 24px rgba(19, 56, 44, 0.08); border: 1px solid #e7dfcf;">
+          <tr>
+            <td style="background-color: #13382c; padding: 32px 28px; text-align: center;">
+              <div style="display: inline-block; width: 48px; height: 48px; line-height: 48px; border-radius: 50%; background-color: #d4a359; color: #13382c; font-weight: bold; font-size: 24px; margin-bottom: 12px;">
+                ॐ
+              </div>
+              <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; font-family: Georgia, serif;">
+                Gurukul Vedic Archive
+              </h1>
+              <p style="margin: 4px 0 0 0; color: #d4a359; font-size: 13px; font-style: italic;">
+                Sacred Knowledge & Shastric Wisdom
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 36px 32px;">
+              <h2 style="margin: 0 0 16px 0; color: #13382c; font-size: 20px; font-weight: 700;">
+                Verify Your Email Address
+              </h2>
+              <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.6; color: #4a453e;">
+                ${greeting}
+              </p>
+              <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #4a453e;">
+                Welcome to Gurukul. Please enter the following 6-digit verification code to confirm your email address and activate your account:
+              </p>
+              <div style="text-align: center; margin: 28px 0; padding: 20px; background-color: #fbf9f4; border: 2px dashed #d4a359; border-radius: 14px;">
+                <span style="font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #13382c; display: inline-block;">
+                  ${otpCode}
+                </span>
+                <p style="margin: 8px 0 0 0; font-size: 11px; color: #8c734b; font-family: monospace;">
+                  Valid for 15 minutes • Do not share this code
+                </p>
+              </div>
+              <p style="margin: 0 0 8px 0; font-size: 12px; color: #78716c; line-height: 1.5;">
+                If you did not request this verification code, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f7f4ec; padding: 20px 32px; text-align: center; border-top: 1px solid #e7dfcf;">
+              <p style="margin: 0; font-size: 11px; color: #8c734b;">
+                © Gurukul Vedic Knowledge Archive • Sanatana Dharma Digitization Project
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+/**
+ * Dispatches an email verification OTP code.
+ */
+export async function sendVerificationEmail({ to, name, otpCode }) {
+  const subject = `Your Gurukul Verification Code: ${otpCode}`;
+  const html = renderVerificationEmailHtml({ name, otpCode, email: to });
+
+  const record = {
+    to,
+    subject,
+    type: "EMAIL_VERIFICATION",
+    otpCode,
+    sentAt: new Date(),
+  };
+
+  sentEmailBuffer.push(record);
+  console.log(`[EmailService] ✉️  Verification code for ${to}: [${otpCode}]`);
+
+  if (process.env.RESEND_API_KEY) {
+    try {
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: process.env.EMAIL_FROM || "Gurukul <auth@gurukul.ai>",
+          to: [to],
+          subject,
+          html,
+        }),
+      });
+    } catch (e) {
+      console.error("[EmailService] Failed to send verification email via Resend:", e.message);
+    }
+  }
+
+  return { success: true, otpCode };
+}
+
+/**
+ * Creates and sends a fresh 6-digit verification OTP token for a user.
+ */
+export async function createAndSendVerificationToken(email, name = null) {
+  const normalizedEmail = email.toLowerCase().trim();
+  const { otpCode, tokenHash, expiresAt } = generateEmailOtp();
+
+  // Invalidate any previous unverified tokens for this email
+  await prisma.emailVerificationToken.updateMany({
+    where: { email: normalizedEmail, used: false },
+    data: { used: true },
+  }).catch(() => {});
+
+  // Store new token
+  await prisma.emailVerificationToken.create({
+    data: {
+      email: normalizedEmail,
+      otpCode,
+      tokenHash,
+      expiresAt,
+      used: false,
+    },
+  });
+
+  // Send email
+  await sendVerificationEmail({
+    to: normalizedEmail,
+    name,
+    otpCode,
+  });
+
+  return { success: true, email: normalizedEmail };
+}
+
+/**
+ * Validates a 6-digit OTP code and marks the user's email as verified.
+ */
+export async function verifyEmailOtp(email, otpCode) {
+  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedCode = String(otpCode).trim();
+
+  const tokenRecord = await prisma.emailVerificationToken.findFirst({
+    where: {
+      email: normalizedEmail,
+      otpCode: normalizedCode,
+      used: false,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!tokenRecord) {
+    throw new Error("Invalid or expired verification code. Please request a new one.");
+  }
+
+  // Mark token as used
+  await prisma.emailVerificationToken.update({
+    where: { id: tokenRecord.id },
+    data: { used: true },
+  });
+
+  // Mark user as email verified
+  const updatedUser = await prisma.user.update({
+    where: { email: normalizedEmail },
+    data: {
+      isEmailVerified: true,
+      emailVerified: new Date(),
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      isEmailVerified: true,
+    },
+  });
+
+  return { success: true, user: updatedUser };
+}
+

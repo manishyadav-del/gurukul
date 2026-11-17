@@ -8,6 +8,8 @@ import prisma from "../../lib/prisma.js";
  */
 
 const STALLED_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes without heartbeat = stalled
+let lastStalledRecoveryTime = 0;
+const STALLED_RECOVERY_INTERVAL_MS = 30 * 1000; // Throttled recovery: max once per 30s
 
 /**
  * Enqueue a book for background processing.
@@ -111,8 +113,12 @@ export async function enqueueBookJob(bookId, options = {}) {
  * @returns {Promise<Object|null>} Claimed IngestJob or null
  */
 export async function claimNextJob(workerId) {
-  // First, recover any stalled jobs
-  await recoverStalledJobs();
+  // Periodically recover any stalled jobs without hammering DB every poll tick
+  const now = Date.now();
+  if (now - lastStalledRecoveryTime > STALLED_RECOVERY_INTERVAL_MS) {
+    lastStalledRecoveryTime = now;
+    await recoverStalledJobs();
+  }
 
   // Find candidate jobs
   return await prisma.$transaction(async (tx) => {

@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { requireAdmin } from "@/server/admin/auth";
 import { PERMISSIONS } from "@/server/admin/permissions";
 import { getQueueMetrics } from "@/server/jobs/queue";
+import { logger } from "@/server/monitoring/logger";
+import { apiError } from "@/server/security/apiResponse";
 import fs from "fs/promises";
 import path from "path";
 
@@ -48,12 +50,40 @@ export async function GET(request) {
         ? "BUSY"
         : "IDLE";
 
-    // 3. Search & AI Embeddings Backlog
-    const [outdatedEmbeddings, totalEmbeddings, totalPassages] = await Promise.all([
+    // 3. Search & AI Embeddings Backlog & Batch Jobs
+    const [
+      outdatedEmbeddings,
+      totalEmbeddings,
+      totalPassages,
+      embeddingJobGroups,
+      knowledgeJobGroups,
+    ] = await Promise.all([
       prisma.passageEmbedding.count({ where: { status: "OUTDATED" } }).catch(() => 0),
       prisma.passageEmbedding.count().catch(() => 0),
       prisma.passage.count().catch(() => 0),
+      prisma.embeddingBatchJob.groupBy({
+        by: ["status"],
+        _count: { id: true },
+      }).catch(() => []),
+      prisma.knowledgeExtractionJob.groupBy({
+        by: ["status"],
+        _count: { id: true },
+      }).catch(() => []),
     ]);
+
+    const embeddingJobsSummary = {
+      queued: embeddingJobGroups.find((g) => g.status === "QUEUED")?._count?.id || 0,
+      processing: embeddingJobGroups.find((g) => g.status === "PROCESSING")?._count?.id || 0,
+      completed: embeddingJobGroups.find((g) => g.status === "COMPLETED")?._count?.id || 0,
+      failed: embeddingJobGroups.find((g) => g.status === "FAILED")?._count?.id || 0,
+    };
+
+    const knowledgeJobsSummary = {
+      pending: knowledgeJobGroups.find((g) => g.status === "PENDING")?._count?.id || 0,
+      processing: knowledgeJobGroups.find((g) => g.status === "PROCESSING")?._count?.id || 0,
+      completed: knowledgeJobGroups.find((g) => g.status === "COMPLETED")?._count?.id || 0,
+      failed: knowledgeJobGroups.find((g) => g.status === "FAILED")?._count?.id || 0,
+    };
 
     const embeddingBacklog = Math.max(0, totalPassages - totalEmbeddings) + outdatedEmbeddings;
 
@@ -138,6 +168,11 @@ export async function GET(request) {
           indexedEmbeddings: totalEmbeddings,
           outdatedEmbeddings,
           backlogCount: embeddingBacklog,
+          embeddingJobs: embeddingJobsSummary,
+        },
+        knowledgeJobs: {
+          status: knowledgeJobsSummary.failed > 0 ? "WARNING" : "HEALTHY",
+          ...knowledgeJobsSummary,
         },
         storage: {
           status: storageStatus,
@@ -147,6 +182,7 @@ export async function GET(request) {
         runtime,
         astronomyEngine: ephemerisHealth,
       },
+      alerts: logger.getRecentAlerts ? logger.getRecentAlerts().slice(0, 15) : [],
     };
 
     cachedHealthData = payload;
@@ -154,10 +190,6 @@ export async function GET(request) {
 
     return NextResponse.json(payload);
   } catch (error) {
-    console.error("GET /api/admin/system-health error:", error);
-    return NextResponse.json(
-      { error: "System health check failed", details: error.message },
-      { status: 500 }
-    );
+    return apiError(error, 500, "SYSTEM_HEALTH_CHECK_FAILED", request);
   }
 }

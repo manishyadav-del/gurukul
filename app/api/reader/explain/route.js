@@ -3,10 +3,15 @@ import prisma from "../../../../lib/prisma.js";
 import { explainPassage } from "../../../../server/ai/passageExplainer.js";
 import { inspectPassageAiFeatures } from "../../../../server/ai/researchAssistant.js";
 import { getAuthenticatedUser } from "../../../../server/security/authGuard.js";
+import { applyRateLimit, RATE_LIMIT_TIERS } from "../../../../server/security/rateLimiter.js";
+import { apiError } from "../../../../server/security/apiResponse.js";
 
 // POST /api/reader/explain
 export async function POST(request) {
   try {
+    const rateLimitResponse = applyRateLimit(request, RATE_LIMIT_TIERS.AI_RESEARCH);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const user = await getAuthenticatedUser(request);
     const body = await request.json();
     const {
@@ -140,6 +145,35 @@ export async function POST(request) {
       return NextResponse.json(featureResult);
     }
 
+    // 1. Check for Pre-Approved Scholarly Verified Explanation
+    const verifiedExplanation = await prisma.scholarlyExplanation.findFirst({
+      where: {
+        ...(bookId ? { bookId } : {}),
+        ...(resolvedPageNumber ? { pageNumber: resolvedPageNumber } : {}),
+        ...(passageId ? { passageId } : {}),
+        isPublished: true,
+        status: { in: ["VERIFIED", "VERIFIED_WITH_CORRECTIONS"] },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    if (verifiedExplanation) {
+      return NextResponse.json({
+        success: true,
+        isScholarlyVerified: true,
+        explanation: {
+          meaning: verifiedExplanation.content,
+          overview: verifiedExplanation.content,
+          commentary: verifiedExplanation.reviewerNotes || null,
+          verifiedBy: verifiedExplanation.reviewerEmail || "Gurukul Scholarly Council",
+          explanationType: verifiedExplanation.explanationType,
+          isVerified: true,
+          status: verifiedExplanation.status,
+        },
+      });
+    }
+
+    // 2. Generate on-demand explanation
     const explanation = await explainPassage({
       passageId,
       passageText: resolvedPassageText,
@@ -152,15 +186,29 @@ export async function POST(request) {
       isVerified,
     });
 
+    // 3. Automatically record AI draft in ScholarlyExplanation (UNREVIEWED, isPublished: false)
+    if (bookId && explanation?.meaning) {
+      prisma.scholarlyExplanation.create({
+        data: {
+          bookId,
+          pageNumber: resolvedPageNumber,
+          passageId,
+          explanationType: "AI_GENERATED",
+          content: explanation.meaning || explanation.overview || "",
+          language: language === "hi" ? "hi" : "en",
+          status: "UNREVIEWED",
+          isPublished: false,
+          confidence: typeof ocrConfidence === "number" ? ocrConfidence : 0.85,
+        },
+      }).catch(() => {});
+    }
+
     return NextResponse.json({
       success: true,
+      isScholarlyVerified: false,
       explanation,
     });
   } catch (err) {
-    console.error("Reader explain passage error:", err);
-    return NextResponse.json(
-      { error: err.message || "Failed to generate passage explanation." },
-      { status: 500 }
-    );
+    return apiError(err, 500, "READER_EXPLAIN_FAILED", request);
   }
 }

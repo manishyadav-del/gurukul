@@ -23,7 +23,9 @@ import {
   Clock,
   Compass,
   ArrowRight,
+  Download,
 } from "lucide-react";
+import VerificationBadge from "@/components/provenance/VerificationBadge.jsx";
 
 export default function ResearchWorkspaceClient({
   publishedBooks = [],
@@ -1091,6 +1093,37 @@ export default function ResearchWorkspaceClient({
                   ))}
                 </div>
 
+                {/* Collection Export Actions */}
+                {activeCollectionId && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-stone-100/80 rounded-2xl border border-stone-200/60 text-xs">
+                    <span className="text-stone-500 font-medium text-[11px]">Export Collection:</span>
+                    <a
+                      href={`/api/research/collections/${activeCollectionId}/export?format=markdown`}
+                      download
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-stone-200 text-stone-700 font-semibold text-[11px] border border-stone-200 shadow-xs transition"
+                    >
+                      <Download className="w-3 h-3 text-emerald-700" />
+                      <span>Markdown</span>
+                    </a>
+                    <a
+                      href={`/api/research/collections/${activeCollectionId}/export?format=bibtex`}
+                      download
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-stone-200 text-stone-700 font-semibold text-[11px] border border-stone-200 shadow-xs transition"
+                    >
+                      <Download className="w-3 h-3 text-emerald-700" />
+                      <span>BibTeX</span>
+                    </a>
+                    <a
+                      href={`/api/research/collections/${activeCollectionId}/export?format=json`}
+                      download
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-stone-200 text-stone-700 font-semibold text-[11px] border border-stone-200 shadow-xs transition"
+                    >
+                      <Download className="w-3 h-3 text-emerald-700" />
+                      <span>JSON</span>
+                    </a>
+                  </div>
+                )}
+
                 {/* Filter by Item Type */}
                 <div className="flex items-center gap-2 text-xs font-semibold">
                   {["ALL", "QUERY_ANSWER", "SAVED_PASSAGE", "SOURCE_COMPARISON"].map((t) => (
@@ -1165,6 +1198,13 @@ export default function ResearchWorkspaceClient({
                           </div>
                         )}
 
+                        {item.notes && (
+                          <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-200/70 text-xs">
+                            <span className="font-bold text-amber-900 block mb-0.5">Personal Research Note:</span>
+                            <p className="text-stone-800 italic">{item.notes}</p>
+                          </div>
+                        )}
+
                         {/* Citations Preview */}
                         {item.citations?.length > 0 && (
                           <div className="pt-2 border-t border-stone-100 space-y-2">
@@ -1173,14 +1213,22 @@ export default function ResearchWorkspaceClient({
                             </span>
                             <div className="flex flex-wrap gap-2 text-xs">
                               {item.citations.map((c, cIdx) => (
-                                <Link
-                                  key={cIdx}
-                                  href={c.readerUrl || `/library`}
-                                  className="px-2.5 py-1 rounded-lg bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 font-mono text-[11px] flex items-center gap-1.5"
-                                >
-                                  <span>{c.bookTitle} (Pg {c.sourcePage || "N/A"})</span>
-                                  <ExternalLink className="w-3 h-3 text-emerald-700" />
-                                </Link>
+                                <div key={cIdx} className="flex items-center gap-1.5 flex-wrap">
+                                  <Link
+                                    href={c.readerUrl || `/library`}
+                                    className="px-2.5 py-1 rounded-lg bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 font-mono text-[11px] flex items-center gap-1.5"
+                                  >
+                                    <span>{c.bookTitle} (Pg {c.sourcePage || "N/A"})</span>
+                                    <ExternalLink className="w-3 h-3 text-emerald-700" />
+                                  </Link>
+                                  {c.quality && (
+                                    <VerificationBadge
+                                      status={c.verificationStatus || (c.quality?.isProofread ? "VERIFIED" : "UNREVIEWED")}
+                                      ocrConfidence={c.quality?.ocrConfidence}
+                                      size="xs"
+                                    />
+                                  )}
+                                </div>
                               ))}
                             </div>
                           </div>

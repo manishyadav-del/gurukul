@@ -3,6 +3,7 @@ import DigitalLibraryView from "@/components/library/DigitalLibraryView";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { Suspense } from "react";
+import { getIntelligentBookRecommendations } from "@/server/learning/recommendationEngine";
 
 export const metadata = {
   title: "Digital Library - Gurukul",
@@ -47,6 +48,19 @@ export default async function LibraryPage() {
         pageCount: true,
         description: true,
         createdAt: true,
+        chapters: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            chapterNumber: true,
+            number: true,
+            startPage: true,
+            endPage: true,
+            _count: { select: { passages: true } },
+          },
+          orderBy: { chapterNumber: "asc" },
+        },
         _count: {
           select: {
             chapters: true,
@@ -101,11 +115,21 @@ export default async function LibraryPage() {
       });
   }
 
+  // 3. Fetch Explainable Intelligent Book Recommendations
+  const recommendations = await getIntelligentBookRecommendations({
+    userId,
+    limit: 6,
+  }).catch((err) => {
+    console.warn("Failed to fetch book recommendations:", err);
+    return null;
+  });
+
   return (
     <Suspense fallback={<LibraryFallback />}>
       <DigitalLibraryView
         initialBooks={books}
         initialProgress={continueReading}
+        initialRecommendations={recommendations}
         isAuthenticated={!!userId}
       />
     </Suspense>

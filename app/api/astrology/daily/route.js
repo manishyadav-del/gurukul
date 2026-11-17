@@ -20,29 +20,15 @@ import { getAuthenticatedUser } from "@/server/security/authGuard";
 import { computePanchang } from "@/server/astrology/panchang";
 import { computeDailyTransits, computeTransitToNatalAspects, buildTransitsOverview } from "@/server/astrology/transits";
 import { generateDailyInterpretation } from "@/server/astrology/dailyAiInterpretation";
+import { applyRateLimit, RATE_LIMIT_TIERS } from "@/server/security/rateLimiter";
+import { apiError } from "@/server/security/apiResponse";
 
 const CALCULATION_VERSION = "v1";
 
-// Simple in-memory rate limiter (per IP, per minute)
-const requestMap = new Map();
-function isRateLimited(ip) {
-  const now = Date.now();
-  const entry = requestMap.get(ip) || { count: 0, resetAt: now + 60_000 };
-  if (now > entry.resetAt) {
-    entry.count = 0;
-    entry.resetAt = now + 60_000;
-  }
-  entry.count++;
-  requestMap.set(ip, entry);
-  return entry.count > 30; // 30 requests per minute per IP
-}
-
 export async function GET(request) {
   try {
-    const ip = request.headers.get("x-forwarded-for") || "unknown";
-    if (isRateLimited(ip)) {
-      return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
-    }
+    const rateLimitResponse = applyRateLimit(request, RATE_LIMIT_TIERS.AI_RESEARCH);
+    if (rateLimitResponse) return rateLimitResponse;
 
     const { searchParams } = new URL(request.url);
     const lat       = parseFloat(searchParams.get("lat") || "0");
@@ -200,10 +186,6 @@ export async function GET(request) {
       isPersonalized,
     });
   } catch (error) {
-    console.error("GET /api/astrology/daily error:", error);
-    return NextResponse.json(
-      { error: "Failed to generate daily astrology report", details: error.message },
-      { status: 500 }
-    );
+    return apiError(error, 500, "DAILY_ASTROLOGY_FAILED", request);
   }
 }

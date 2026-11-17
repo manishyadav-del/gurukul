@@ -7,10 +7,15 @@ import {
   extractTargetedAstrologyContext,
   synthesizePersonalizedAnswer,
 } from "@/server/astrology/personalizedContextEngine";
+import { applyRateLimit, RATE_LIMIT_TIERS } from "@/server/security/rateLimiter";
+import { apiError } from "@/server/security/apiResponse";
 
 // POST /api/astrology/ai-assistant
 export async function POST(request) {
   try {
+    const rateLimitResponse = applyRateLimit(request, RATE_LIMIT_TIERS.AI_RESEARCH);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const authUser = await getAuthenticatedUser(request);
     const body = await request.json();
     const { query, language = "en" } = body;
@@ -190,10 +195,6 @@ export async function POST(request) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("POST /api/astrology/ai-assistant error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to process AI Jyotish Assistant inquiry." },
-      { status: 500 }
-    );
+    return apiError(error, 500, "ASTROLOGY_AI_ASSISTANT_FAILED", request);
   }
 }

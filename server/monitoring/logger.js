@@ -58,7 +58,13 @@ export function redactSensitiveData(data) {
   const sanitized = {};
   for (const [key, value] of Object.entries(data)) {
     const lowerKey = key.toLowerCase();
-    if (SENSITIVE_KEYS.has(lowerKey) || lowerKey.includes("secret") || lowerKey.includes("password")) {
+    if (
+      SENSITIVE_KEYS.has(lowerKey) ||
+      lowerKey.includes("secret") ||
+      lowerKey.includes("password") ||
+      lowerKey.includes("token") ||
+      lowerKey.includes("key")
+    ) {
       sanitized[key] = "[REDACTED]";
     } else if (typeof value === "object" && value !== null) {
       sanitized[key] = redactSensitiveData(value);

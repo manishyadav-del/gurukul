@@ -58,6 +58,14 @@ export default async function AdminProofreadingHubPage({ searchParams }) {
             Compare original scanned pages side-by-side with OCR text, correct transcription mistakes, and approve pages.
           </p>
         </div>
+
+        <Link
+          href="/admin/verification"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#13382c] hover:bg-[#1a4a3b] text-white text-xs font-bold transition shadow-xs self-start sm:self-auto"
+        >
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <span>Scholarly Verification Studio</span>
+        </Link>
       </div>
 
       {books.length === 0 ? (

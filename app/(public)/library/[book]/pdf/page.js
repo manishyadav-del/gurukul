@@ -103,7 +103,7 @@ export default async function BookPdfReaderPage({ params }) {
   const firstChapterSlug = book.chapters[0]?.slug;
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-6 space-y-4">
+    <div className="max-w-[1760px] w-full mx-auto px-2 sm:px-4 lg:px-6 py-4 space-y-3">
       {/* Top Breadcrumb & Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-2">
         <div className="flex items-center gap-3">
@@ -156,6 +156,7 @@ export default async function BookPdfReaderPage({ params }) {
         chapters={book.chapters || []}
         initialPages={book.pages || []}
         initialPassages={book.passages || []}
+        user={user}
       />
     </div>
   );

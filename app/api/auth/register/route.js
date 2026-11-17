@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { logger } from "@/server/monitoring/logger";
+import { createAndSendVerificationToken } from "@/server/email/emailService";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -43,7 +44,7 @@ export async function POST(request) {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // 4. Create User Record
+    // 4. Create User Record with isEmailVerified: false
     const user = await prisma.user.create({
       data: {
         name: name ? String(name).trim() : null,
@@ -52,6 +53,7 @@ export async function POST(request) {
         role: "USER",
         locale: String(locale).trim(),
         timezone: String(timezone).trim(),
+        isEmailVerified: false,
         totalXp: 0,
         level: 1,
         currentStreak: 0,
@@ -67,16 +69,22 @@ export async function POST(request) {
         level: true,
         totalXp: true,
         currentStreak: true,
+        isEmailVerified: true,
         createdAt: true,
       },
     });
 
-    logger.info("User registered successfully", { userId: user.id, email: user.email });
+    // 5. Generate and dispatch Email Verification OTP code
+    await createAndSendVerificationToken(normalizedEmail, user.name);
+
+    logger.info("User registered successfully; verification code dispatched", { userId: user.id, email: user.email });
 
     return NextResponse.json(
       {
         success: true,
-        message: "Account registered successfully",
+        requireVerification: true,
+        message: "Verification code sent to your email address. Please enter the 6-digit code to complete registration.",
+        email: normalizedEmail,
         user,
       },
       { status: 201 }

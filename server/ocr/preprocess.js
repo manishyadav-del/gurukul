@@ -320,6 +320,122 @@ export function detectTwoPageSpread(width, height, pixelData) {
 }
 
 /**
+ * Removes black scanner borders, lid shadow margins, and gutter edges.
+ * Scans each edge (top, bottom, left, right) up to maxBorderRatio (e.g. 0.05 or 60px)
+ * and sets contiguous dark edge bands to white.
+ *
+ * @param {Buffer|Uint8ClampedArray} pixels - RGBA pixel buffer
+ * @param {number} width - Image width
+ * @param {number} height - Image height
+ * @param {Object} [options]
+ * @param {number} [options.maxBorderRatio=0.05]
+ * @param {number} [options.threshold=80]
+ * @returns {Buffer}
+ */
+export function removeScanBorders(pixels, width, height, options = {}) {
+  const maxBorderX = Math.min(Math.round(width * (options.maxBorderRatio || 0.05)), 60);
+  const maxBorderY = Math.min(Math.round(height * (options.maxBorderRatio || 0.05)), 60);
+  const darkThresh = options.threshold ?? 80;
+  const data = Buffer.from(pixels);
+
+  // Left & right border clearing
+  for (let y = 0; y < height; y++) {
+    // Left edge inward
+    for (let x = 0; x < maxBorderX; x++) {
+      const idx = (y * width + x) * 4;
+      if (data[idx] < darkThresh) {
+        data[idx] = 255;
+        data[idx + 1] = 255;
+        data[idx + 2] = 255;
+      } else {
+        break; // stop once paper background or content is reached
+      }
+    }
+    // Right edge inward
+    for (let x = width - 1; x >= width - maxBorderX; x--) {
+      const idx = (y * width + x) * 4;
+      if (data[idx] < darkThresh) {
+        data[idx] = 255;
+        data[idx + 1] = 255;
+        data[idx + 2] = 255;
+      } else {
+        break;
+      }
+    }
+  }
+
+  // Top & bottom border clearing
+  for (let x = 0; x < width; x++) {
+    // Top edge inward
+    for (let y = 0; y < maxBorderY; y++) {
+      const idx = (y * width + x) * 4;
+      if (data[idx] < darkThresh) {
+        data[idx] = 255;
+        data[idx + 1] = 255;
+        data[idx + 2] = 255;
+      } else {
+        break;
+      }
+    }
+    // Bottom edge inward
+    for (let y = height - 1; y >= height - maxBorderY; y--) {
+      const idx = (y * width + x) * 4;
+      if (data[idx] < darkThresh) {
+        data[idx] = 255;
+        data[idx + 1] = 255;
+        data[idx + 2] = 255;
+      } else {
+        break;
+      }
+    }
+  }
+
+  return data;
+}
+
+/**
+ * Normalizes image resolution by upscaling low-resolution inputs (< 1200px width)
+ * up to 300 DPI equivalent for high-fidelity Sanskrit and Devanagari character recognition.
+ *
+ * @param {Buffer} imageBuffer - Input image buffer
+ * @param {Object} [options]
+ * @param {number} [options.minWidth=1200]
+ * @param {number} [options.maxScaleFactor=2.0]
+ * @param {string} [options.format='png']
+ * @returns {Promise<Buffer>}
+ */
+export async function normalizeResolution(imageBuffer, options = {}) {
+  let createCanvas, loadImage;
+  try {
+    const canvasMod = await import("@napi-rs/canvas");
+    createCanvas = canvasMod.createCanvas;
+    loadImage = canvasMod.loadImage;
+  } catch (err) {
+    return imageBuffer;
+  }
+
+  const img = await loadImage(imageBuffer);
+  const minTargetWidth = options.minWidth || 1200;
+  if (img.width >= minTargetWidth) {
+    return imageBuffer;
+  }
+
+  const scaleFactor = Math.min(options.maxScaleFactor || 2.0, minTargetWidth / img.width);
+  const targetWidth = Math.round(img.width * scaleFactor);
+  const targetHeight = Math.round(img.height * scaleFactor);
+
+  const canvas = createCanvas(targetWidth, targetHeight);
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, targetWidth, targetHeight);
+  ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+  return canvas.toBuffer(options.format === "webp" ? "image/webp" : "image/png");
+}
+
+/**
  * Full preprocessing pipeline executing grayscale, contrast, adaptive thresholding,
  * and noise reduction.
  */
@@ -331,10 +447,14 @@ export function preprocessPixels(pixelData, width, height, options = {}) {
     adaptive = true,
     binarize: doBinarize = false,
     denoise = true,
+    removeBorders = false,
   } = options;
 
   let data = Buffer.from(pixelData);
 
+  if (removeBorders) {
+    data = removeScanBorders(data, width, height, options);
+  }
   if (grayscale) {
     data = toGrayscale(data);
   }
@@ -397,8 +517,19 @@ export async function preprocessImageBuffer(imageBuffer, options = {}) {
     targetHeight = img.width;
   }
 
+  // Optional low-resolution upscaling (bring small scan < 1200px to 300 DPI equivalent)
+  if (options.upscaleLowRes && targetWidth < (options.minWidth || 1200)) {
+    const scaleFactor = Math.min(options.maxScaleFactor || 2.0, (options.minWidth || 1200) / targetWidth);
+    targetWidth = Math.round(targetWidth * scaleFactor);
+    targetHeight = Math.round(targetHeight * scaleFactor);
+  }
+
   let canvas = createCanvas(targetWidth, targetHeight);
   let ctx = canvas.getContext("2d");
+  if (options.upscaleLowRes) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+  }
 
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, targetWidth, targetHeight);
@@ -407,10 +538,10 @@ export async function preprocessImageBuffer(imageBuffer, options = {}) {
     ctx.save();
     ctx.translate(targetWidth / 2, targetHeight / 2);
     ctx.rotate((rotation * Math.PI) / 180);
-    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    ctx.drawImage(img, -targetWidth / 2, -targetHeight / 2, targetWidth, targetHeight);
     ctx.restore();
   } else {
-    ctx.drawImage(img, 0, 0);
+    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
   }
 
   // Pixel data manipulations
@@ -442,7 +573,8 @@ export async function preprocessImageBuffer(imageBuffer, options = {}) {
     options.contrast ||
     options.adaptive ||
     options.binarize ||
-    options.denoise;
+    options.denoise ||
+    options.removeBorders;
 
   if (shouldFilter) {
     const processed = preprocessPixels(imgData.data, targetWidth, targetHeight, {
@@ -452,6 +584,8 @@ export async function preprocessImageBuffer(imageBuffer, options = {}) {
       adaptive: options.adaptive ?? false, // Default soft grayscale contrast unless explicitly adaptive
       binarize: options.binarize ?? false,
       denoise: options.denoise ?? true,
+      removeBorders: options.removeBorders ?? false,
+      maxBorderRatio: options.maxBorderRatio,
       tRatio: options.tRatio,
     });
     const newImgData = new ImageData(new Uint8ClampedArray(processed), targetWidth, targetHeight);

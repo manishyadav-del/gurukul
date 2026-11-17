@@ -21,9 +21,11 @@ import { runTesseractOcr } from "./recognize.js";
 import { preprocessImageBuffer } from "./preprocess.js";
 import { normalizeOcrResult } from "./normalize.js";
 import { calculateConfidence } from "./confidence.js";
+import { validateDevanagariText } from "./sanskritValidator.js";
 
 /**
  * Evaluates the quality and validity of an OCR output candidate.
+ * Incorporates structural Devanagari validation, syllable balance, and noise checks.
  * 
  * @param {Object} candidate - Raw OCR result
  * @param {Object} context - Target language, page number, script
@@ -38,16 +40,27 @@ import { calculateConfidence } from "./confidence.js";
  *     orphanedMatraCount: number,
  *     replacementCharCount: number,
  *     noiseCharCount: number,
- *     validityScore: number
+ *     validityScore: number,
+ *     structuralValidityScore: number
  *   }
  * }}
  */
 export function evaluateOcrCandidate(candidate, context = {}) {
   const text = (candidate.fullText || candidate.text || "").trim();
   const textLength = text.length;
-  const confidence = typeof candidate.stats?.pageConfidence === "number"
-    ? candidate.stats.pageConfidence
-    : (candidate.confidence > 1 ? candidate.confidence / 100 : candidate.confidence || 0);
+  let confidence = 0;
+  if (typeof candidate.stats?.pageConfidence === "number") {
+    confidence = candidate.stats.pageConfidence;
+  } else if (typeof candidate.confidence === "number") {
+    confidence = candidate.confidence > 1 ? candidate.confidence / 100 : candidate.confidence;
+  } else if (Array.isArray(candidate.blocks) && candidate.blocks.length > 0) {
+    const validScores = candidate.blocks
+      .map(b => typeof b.confidence === "number" ? (b.confidence > 1 ? b.confidence / 100 : b.confidence) : null)
+      .filter(s => s !== null);
+    if (validScores.length > 0) {
+      confidence = Math.round((validScores.reduce((a, b) => a + b, 0) / validScores.length) * 1000) / 1000;
+    }
+  }
 
   const lang = String(context.language || "").toLowerCase();
   const isIndic = lang === "hi" || lang === "hindi" || lang === "sa" || lang === "sanskrit" || context.script === "Devanagari";
@@ -65,40 +78,49 @@ export function evaluateOcrCandidate(candidate, context = {}) {
   const devanagariCount = (text.match(/[\u0900-\u097F]/g) || []).length;
   const devanagariRatio = textLength > 0 ? devanagariCount / textLength : 0;
 
-  // 3. Detect malformed Devanagari: orphaned combining marks without a base consonant
-  // e.g., vowel signs [\u093E-\u094C] at the start of a token or preceded by a space/punctuation
+  // 3. Deep Devanagari structural validation
+  let structuralValidityScore = 1.0;
+  if (devanagariCount > 0 || isIndic) {
+    const devValidation = validateDevanagariText(text);
+    structuralValidityScore = devValidation.score;
+    for (const issue of devValidation.issues) {
+      if (issue.severity === "CRITICAL" || issue.severity === "WARNING") {
+        reasons.push(`${issue.code}: ${issue.message}`);
+      }
+    }
+  }
+
+  // 4. Detect malformed Devanagari: orphaned combining marks without a base consonant
   const orphanedMatras = (text.match(/(?:^|[\s\p{P}])[\u093E-\u094C\u0901\u0902\u0903\u094D]/gu) || []).length;
-  if (orphanedMatras > 2) {
+  if (orphanedMatras > 2 && !reasons.some(r => r.includes("ORPHANED_COMBINING_MATRA"))) {
     reasons.push(`MALFORMED_DEVANAGARI_ORPHANED_MATRAS (${orphanedMatras})`);
   }
 
-  // 4. Replacement characters (\uFFFD or unprintable sequences)
+  // 5. Replacement characters (\uFFFD or unprintable sequences)
   const replacementCharCount = (text.match(/\uFFFD/g) || []).length;
-  if (replacementCharCount > 2) {
+  if (replacementCharCount > 2 && !reasons.some(r => r.includes("CORRUPTED_UNICODE_REPLACEMENT"))) {
     reasons.push(`EXCESSIVE_REPLACEMENT_CHARS (${replacementCharCount})`);
   }
 
-  // 5. Noise characters (isolated ASCII junk often produced by OCR on scan dust: ~ ^ _ ` \)
+  // 6. Noise characters (isolated ASCII junk often produced by OCR on scan dust: ~ ^ _ ` \)
   const noiseCharCount = (text.match(/[~^`_\\]/g) || []).length;
   const noiseRatio = textLength > 0 ? noiseCharCount / textLength : 0;
-  if (noiseRatio > 0.05) {
+  if (noiseRatio > 0.05 && !reasons.some(r => r.includes("HIGH_NOISE_ARTIFACT_DENSITY"))) {
     reasons.push("HIGH_NOISE_CHARACTER_DENSITY");
   }
 
-  // 6. Indic script expectation check
-  if (isIndic && textLength > 25 && devanagariRatio < 0.20) {
+  // 7. Indic script expectation check
+  if (isIndic && textLength > 25 && devanagariRatio < 0.20 && !reasons.some(r => r.includes("ABNORMAL_LOW_DEVANAGARI_RATIO"))) {
     reasons.push("EXPECTED_INDIC_BUT_FOUND_LOW_DEVANAGARI");
   }
 
-  // 7. Calculate multi-factor composite validity score
-  // Formula balances confidence (0.35), script coherence (0.35), text completeness (0.20), and penalizes noise (0.10)
-  let validityScore = 1.0;
-  if (orphanedMatras > 0) validityScore -= Math.min(0.4, orphanedMatras * 0.08);
-  if (replacementCharCount > 0) validityScore -= Math.min(0.4, replacementCharCount * 0.1);
-  if (noiseRatio > 0) validityScore -= Math.min(0.3, noiseRatio * 2);
-  validityScore = Math.max(0, validityScore);
+  // 8. Calculate multi-factor composite validity score
+  // Balances engine confidence (30%), structural validity (35%), script coherence (25%), and length (10%)
+  let validityScore = structuralValidityScore;
+  if (noiseRatio > 0) validityScore -= Math.min(0.2, noiseRatio * 2);
+  validityScore = Math.max(0, Math.min(1.0, validityScore));
 
-  let lengthFactor = Math.min(1.0, textLength / 50);
+  const lengthFactor = Math.min(1.0, textLength / 50);
 
   let scriptFactor = 1.0;
   if (isIndic) {
@@ -106,11 +128,11 @@ export function evaluateOcrCandidate(candidate, context = {}) {
   }
 
   const compositeScore = Math.round(
-    ((confidence * 0.35) + (validityScore * 0.35) + (scriptFactor * 0.20) + (lengthFactor * 0.10)) * 1000
+    ((confidence * 0.30) + (validityScore * 0.35) + (scriptFactor * 0.25) + (lengthFactor * 0.10)) * 1000
   ) / 1000;
 
-  const minConfidence = context.minConfidence ?? 0.75;
-  const passesQuality = reasons.length === 0 && confidence >= minConfidence;
+  const minConfidence = context.minConfidence ?? 0.70;
+  const passesQuality = reasons.length === 0 && confidence >= minConfidence && structuralValidityScore >= 0.75;
 
   return {
     confidence,
@@ -124,6 +146,7 @@ export function evaluateOcrCandidate(candidate, context = {}) {
       replacementCharCount,
       noiseCharCount,
       validityScore,
+      structuralValidityScore,
     },
   };
 }
@@ -171,10 +194,14 @@ export async function runOcrWithQualityRetries(imageBuffer, options = {}) {
   });
 
   const norm1 = normalizeOcrResult(raw1, options);
-  const stats1 = calculateConfidence(norm1.blocks, raw1.confidence, options.thresholds);
+  norm1.confidence = typeof raw1.confidence === "number" ? (raw1.confidence > 1 ? raw1.confidence / 100 : raw1.confidence) : 0.85;
+  const eval1 = evaluateOcrCandidate(norm1, options);
+  const stats1 = calculateConfidence(norm1.blocks, raw1.confidence, {
+    ...options.thresholds,
+    structuralValidityScore: eval1.metrics.structuralValidityScore,
+  });
   norm1.stats = stats1;
 
-  const eval1 = evaluateOcrCandidate(norm1, options);
   candidates.push({
     recipe: "Recipe1_StandardContrast_PSM3",
     result: norm1,
@@ -205,7 +232,7 @@ export async function runOcrWithQualityRetries(imageBuffer, options = {}) {
   }
 
   // -------------------------------------------------------------
-  // RECIPE 2: Adaptive Local Thresholding + Auto-Deskew
+  // RECIPE 2: Border Removal + Adaptive Local Thresholding + Auto-Deskew
   // Preserves fine Devanagari matras on unevenly lit scans/manuscripts
   // -------------------------------------------------------------
   try {
@@ -216,6 +243,8 @@ export async function runOcrWithQualityRetries(imageBuffer, options = {}) {
       adaptive: true,
       deskew: true,
       denoise: true,
+      removeBorders: true,
+      upscaleLowRes: true,
       tRatio: 0.12,
     });
 
@@ -225,11 +254,15 @@ export async function runOcrWithQualityRetries(imageBuffer, options = {}) {
     });
 
     const norm2 = normalizeOcrResult(raw2, options);
-    norm2.stats = calculateConfidence(norm2.blocks, raw2.confidence, options.thresholds);
+    norm2.confidence = typeof raw2.confidence === "number" ? (raw2.confidence > 1 ? raw2.confidence / 100 : raw2.confidence) : 0.85;
     const eval2 = evaluateOcrCandidate(norm2, options);
+    norm2.stats = calculateConfidence(norm2.blocks, raw2.confidence, {
+      ...options.thresholds,
+      structuralValidityScore: eval2.metrics.structuralValidityScore,
+    });
 
     candidates.push({
-      recipe: "Recipe2_AdaptiveThreshold_Deskew_PSM3",
+      recipe: "Recipe2_AdaptiveThreshold_BorderRemoval_Deskew_PSM3",
       result: norm2,
       confidence: eval2.confidence,
       compositeScore: eval2.compositeScore,
@@ -246,7 +279,7 @@ export async function runOcrWithQualityRetries(imageBuffer, options = {}) {
         stats: norm2.stats,
         diagnostics: {
           attemptsCount: 2,
-          winningRecipe: "Recipe2_AdaptiveThreshold_Deskew_PSM3",
+          winningRecipe: "Recipe2_AdaptiveThreshold_BorderRemoval_Deskew_PSM3",
           candidates: candidates.map(c => ({
             recipe: c.recipe,
             confidence: c.confidence,
@@ -261,7 +294,7 @@ export async function runOcrWithQualityRetries(imageBuffer, options = {}) {
   }
 
   // -------------------------------------------------------------
-  // RECIPE 3: Single Uniform Block Mode (PSM 6)
+  // RECIPE 3: Sanskrit Layout Tuning & Uniform Block Mode (PSM 6)
   // Especially effective for dense classical shloka verses and treatise texts
   // -------------------------------------------------------------
   if (candidates.every(c => !c.evaluation.passesQuality)) {
@@ -273,6 +306,8 @@ export async function runOcrWithQualityRetries(imageBuffer, options = {}) {
         deskew: true,
         adaptive: false,
         denoise: true,
+        removeBorders: true,
+        upscaleLowRes: true,
       });
 
       const raw3 = await runTesseractOcr(recipe3Buffer, {
@@ -281,11 +316,15 @@ export async function runOcrWithQualityRetries(imageBuffer, options = {}) {
       });
 
       const norm3 = normalizeOcrResult(raw3, options);
-      norm3.stats = calculateConfidence(norm3.blocks, raw3.confidence, options.thresholds);
+      norm3.confidence = typeof raw3.confidence === "number" ? (raw3.confidence > 1 ? raw3.confidence / 100 : raw3.confidence) : 0.85;
       const eval3 = evaluateOcrCandidate(norm3, options);
+      norm3.stats = calculateConfidence(norm3.blocks, raw3.confidence, {
+        ...options.thresholds,
+        structuralValidityScore: eval3.metrics.structuralValidityScore,
+      });
 
       candidates.push({
-        recipe: "Recipe3_HighContrast_Deskew_PSM6",
+        recipe: "Recipe3_HighContrast_BorderRemoval_Deskew_PSM6",
         result: norm3,
         confidence: eval3.confidence,
         compositeScore: eval3.compositeScore,

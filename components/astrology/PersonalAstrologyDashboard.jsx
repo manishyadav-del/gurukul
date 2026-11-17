@@ -395,39 +395,39 @@ export default function PersonalAstrologyDashboard({ initialLanguage = "en" }) {
           {/* Birth Profile Meta Pill Bar */}
           {profile && chart && (
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 pt-2">
-              <div className="bg-black/25 backdrop-blur-xs p-3 rounded-xl border border-white/10">
-                <div className="text-[10px] text-amber-300 font-medium uppercase tracking-wider">{isHi ? "लग्न (Ascendant)" : "Ascendant (Lagna)"}</div>
-                <div className="text-sm font-bold text-white mt-0.5 truncate">{chart.ascendant?.sign} {chart.ascendant?.degree}°</div>
-                <div className="text-[10px] text-amber-200/70">{chart.ascendant?.nakshatra} (P{chart.ascendant?.pada})</div>
+              <div className="bg-black/30 backdrop-blur-xs p-3 rounded-xl border border-white/15">
+                <div className="text-xs text-amber-200 font-bold uppercase tracking-wider">{isHi ? "लग्न (Ascendant)" : "Ascendant (Lagna)"}</div>
+                <div className="text-sm font-bold text-white mt-1 truncate">{chart.ascendant?.sign} {chart.ascendant?.degree}°</div>
+                <div className="text-xs text-amber-100/90 font-medium">{chart.ascendant?.nakshatra} (P{chart.ascendant?.pada})</div>
               </div>
 
-              <div className="bg-black/25 backdrop-blur-xs p-3 rounded-xl border border-white/10">
-                <div className="text-[10px] text-amber-300 font-medium uppercase tracking-wider">{isHi ? "जन्म राशि (Moon)" : "Janma Rashi (Moon)"}</div>
-                <div className="text-sm font-bold text-white mt-0.5 truncate">{chart.moon?.sign}</div>
-                <div className="text-[10px] text-amber-200/70">{chart.moon?.nakshatra} (P{chart.moon?.pada})</div>
+              <div className="bg-black/30 backdrop-blur-xs p-3 rounded-xl border border-white/15">
+                <div className="text-xs text-amber-200 font-bold uppercase tracking-wider">{isHi ? "जन्म राशि (Moon)" : "Janma Rashi (Moon)"}</div>
+                <div className="text-sm font-bold text-white mt-1 truncate">{chart.moon?.sign}</div>
+                <div className="text-xs text-amber-100/90 font-medium">{chart.moon?.nakshatra} (P{chart.moon?.pada})</div>
               </div>
 
-              <div className="bg-black/25 backdrop-blur-xs p-3 rounded-xl border border-white/10">
-                <div className="text-[10px] text-amber-300 font-medium uppercase tracking-wider">{isHi ? "सूर्य राशि (Sun)" : "Sun Sign (Surya)"}</div>
-                <div className="text-sm font-bold text-white mt-0.5 truncate">
+              <div className="bg-black/30 backdrop-blur-xs p-3 rounded-xl border border-white/15">
+                <div className="text-xs text-amber-200 font-bold uppercase tracking-wider">{isHi ? "सूर्य राशि (Sun)" : "Sun Sign (Surya)"}</div>
+                <div className="text-sm font-bold text-white mt-1 truncate">
                   {chart.planets?.find((p) => p.planet === "SUN")?.sign || "N/A"}
                 </div>
-                <div className="text-[10px] text-amber-200/70">{chart.planets?.find((p) => p.planet === "SUN")?.nakshatra || ""}</div>
+                <div className="text-xs text-amber-100/90 font-medium">{chart.planets?.find((p) => p.planet === "SUN")?.nakshatra || ""}</div>
               </div>
 
-              <div className="bg-black/25 backdrop-blur-xs p-3 rounded-xl border border-white/10">
-                <div className="text-[10px] text-amber-300 font-medium uppercase tracking-wider">{isHi ? "सक्रिय महादशा" : "Active Mahadasha"}</div>
-                <div className="text-sm font-bold text-white mt-0.5 truncate">{chart.dasha?.currentMahadasha}</div>
-                <div className="text-[10px] text-amber-200/70">{chart.dasha?.currentAntardasha} Antardasha</div>
+              <div className="bg-black/30 backdrop-blur-xs p-3 rounded-xl border border-white/15">
+                <div className="text-xs text-amber-200 font-bold uppercase tracking-wider">{isHi ? "सक्रिय महादशा" : "Active Mahadasha"}</div>
+                <div className="text-sm font-bold text-white mt-1 truncate">{chart.dasha?.currentMahadasha}</div>
+                <div className="text-xs text-amber-100/90 font-medium">{chart.dasha?.currentAntardasha} Antardasha</div>
               </div>
 
-              <div className="bg-black/25 backdrop-blur-xs p-3 rounded-xl border border-white/10 col-span-2 sm:col-span-2">
-                <div className="text-[10px] text-amber-300 font-medium uppercase tracking-wider">{isHi ? "जन्म स्थान एवं समय" : "Birth Place & Time"}</div>
-                <div className="text-sm font-medium text-white mt-0.5 truncate flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-[#c4903c] shrink-0" />
+              <div className="bg-black/30 backdrop-blur-xs p-3 rounded-xl border border-white/15 col-span-2 sm:col-span-2">
+                <div className="text-xs text-amber-200 font-bold uppercase tracking-wider">{isHi ? "जन्म स्थान एवं समय" : "Birth Place & Time"}</div>
+                <div className="text-sm font-medium text-white mt-1 truncate flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-[#d4a359] shrink-0" />
                   <span>{profile.birthPlace}</span>
                 </div>
-                <div className="text-[10px] text-amber-200/70 flex items-center gap-2 mt-0.5">
+                <div className="text-xs text-amber-100/90 flex items-center gap-2 mt-1 font-medium">
                   <span>{profile.birthDate}</span>
                   <span>•</span>
                   <span>{profile.birthTime}</span>
@@ -543,49 +543,49 @@ export default function PersonalAstrologyDashboard({ initialLanguage = "en" }) {
                     </div>
 
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
+                      <table className="w-full text-left text-xs sm:text-sm">
                         <thead>
-                          <tr className="border-b border-stone-200 text-stone-500 font-medium">
-                            <th className="pb-2.5">{isHi ? "ग्रह" : "Graha"}</th>
-                            <th className="pb-2.5">{isHi ? "राशि" : "Rashi"}</th>
-                            <th className="pb-2.5">{isHi ? "भाव" : "House"}</th>
-                            <th className="pb-2.5">{isHi ? "अंश" : "Degree"}</th>
-                            <th className="pb-2.5">{isHi ? "नक्षत्र (पद)" : "Nakshatra"}</th>
-                            <th className="pb-2.5 text-right">{isHi ? "स्थिति" : "Dignity"}</th>
+                          <tr className="border-b border-stone-200 text-stone-700 font-bold uppercase tracking-wider text-xs">
+                            <th className="pb-3">{isHi ? "ग्रह" : "Graha"}</th>
+                            <th className="pb-3">{isHi ? "राशि" : "Rashi"}</th>
+                            <th className="pb-3">{isHi ? "भाव" : "House"}</th>
+                            <th className="pb-3">{isHi ? "अंश" : "Degree"}</th>
+                            <th className="pb-3">{isHi ? "नक्षत्र (पद)" : "Nakshatra"}</th>
+                            <th className="pb-3 text-right">{isHi ? "स्थिति" : "Dignity"}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100">
                           {chart.planets?.map((p) => {
                             const isRetro = p.retrograde && !["RAHU", "KETU"].includes(p.planet);
                             return (
-                              <tr key={p.planet} className="hover:bg-amber-50/40 transition">
-                                <td className="py-2.5 font-bold text-stone-900 flex items-center gap-1.5">
+                              <tr key={p.planet} className="hover:bg-amber-50/50 transition">
+                                <td className="py-3 font-bold text-stone-900 flex items-center gap-1.5">
                                   <span>{p.name || p.planet}</span>
                                   {isRetro && (
-                                    <span className="text-[10px] text-amber-700 bg-amber-100 px-1 rounded font-semibold">
+                                    <span className="text-xs text-amber-900 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded font-bold">
                                       {isHi ? "व" : "R"}
                                     </span>
                                   )}
                                   {p.isCombust && (
-                                    <span className="text-[10px] text-rose-700 bg-rose-100 px-1 rounded font-semibold">
+                                    <span className="text-xs text-rose-900 bg-rose-100 border border-rose-300 px-1.5 py-0.5 rounded font-bold">
                                       {isHi ? "अस्त" : "Combust"}
                                     </span>
                                   )}
                                 </td>
-                                <td className="py-2.5 text-stone-700 font-medium">{p.sign}</td>
-                                <td className="py-2.5 text-stone-600">H{p.house}</td>
-                                <td className="py-2.5 text-stone-600">{typeof p.degree === "number" ? p.degree.toFixed(2) : p.degree}°</td>
-                                <td className="py-2.5 text-stone-600 truncate max-w-[120px]">
+                                <td className="py-3 text-stone-800 font-semibold">{p.sign}</td>
+                                <td className="py-3 text-stone-700 font-medium">H{p.house}</td>
+                                <td className="py-3 text-stone-700 font-medium">{typeof p.degree === "number" ? p.degree.toFixed(2) : p.degree}°</td>
+                                <td className="py-3 text-stone-700 font-medium truncate max-w-[130px]">
                                   {p.nakshatra} (P{p.pada})
                                 </td>
-                                <td className="py-2.5 text-right font-medium">
+                                <td className="py-3 text-right font-medium">
                                   <span
-                                    className={`px-2 py-0.5 rounded-md text-[10px] ${
+                                    className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
                                       p.dignity === "EXALTED" || p.dignity === "OWN" || p.dignity === "MOOLATRIKONA"
-                                        ? "bg-emerald-100 text-emerald-800"
+                                        ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
                                         : p.dignity === "DEBILITATED"
-                                        ? "bg-rose-100 text-rose-800"
-                                        : "bg-stone-100 text-stone-700"
+                                        ? "bg-rose-100 text-rose-900 border border-rose-300"
+                                        : "bg-stone-100 text-stone-800 border border-stone-200"
                                     }`}
                                   >
                                     {p.dignityLabel || p.dignity || "Neutral"}
@@ -682,6 +682,33 @@ export default function PersonalAstrologyDashboard({ initialLanguage = "en" }) {
         {/* TAB 4: DAILY GUIDANCE & PANCHANG */}
         {activeTab === "guidance" && (
           <div className="space-y-8">
+            {/* Unified 10-Section Experience Callout Banner */}
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-[#13382c] to-[#1d4d3d] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-200 border border-amber-400/30 uppercase tracking-wider">
+                    Full Experience
+                  </span>
+                  <span className="text-xs text-stone-300">10-Section Guidance Suite</span>
+                </div>
+                <h4 className="text-base sm:text-lg font-serif font-bold text-amber-50">
+                  {isHi ? "दैनिक वैदिक उपाय, पूजा एवं कुण्डलिनी मार्गदर्शन" : "Dedicated Daily Remedies, Puja & Kundalini Guidance"}
+                </h4>
+                <p className="text-xs text-stone-200 max-w-2xl">
+                  {isHi
+                    ? "८ शास्त्रीय पूजाएं, संस्कृत मन्त्र अन्वय, नाडी एवं चक्र साधना, तथा श्वास गति टाइमर युक्त विस्तृत अनुभव।"
+                    : "Access all 8 classical Pujas, Sanskrit mantra Anvaya analysis, active Nadi & Chakra alignment, and interactive breath pacing."}
+                </p>
+              </div>
+              <Link
+                href="/astrology/daily-guidance"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-400 text-[#13382c] font-bold text-xs hover:bg-amber-300 transition shrink-0 shadow-sm"
+              >
+                <span>{isHi ? "पूर्ण दैनिक अनुभव खोलें" : "Launch Full Experience"}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
             {/* Daily Guidance Cards */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">

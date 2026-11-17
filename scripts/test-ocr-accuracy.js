@@ -26,6 +26,7 @@ import {
   createLowResPageFixture,
   createNoisyDegradedPageFixture,
   createKrutiDevSample,
+  createChanakyaSample,
 } from "./fixtures/ocrEvaluationFixtures.js";
 import { calculateCER, calculateWER } from "../server/ocr/evaluationMetrics.js";
 import { runTesseractOcr } from "../server/ocr/recognize.js";
@@ -35,8 +36,24 @@ import {
   analyzeTextLayer,
   detectKrutiDevEncoding,
   convertKrutiDevToUnicode,
+  detectChanakyaEncoding,
+  convertChanakyaToUnicode,
 } from "../server/ocr/textLayerAnalyzer.js";
 import { evaluateOcrCandidate } from "../server/ocr/qualityPipeline.js";
+import {
+  correctDevanagariOcrText,
+  normalizeDevanagariDandas,
+  normalizeSanskritVisarga,
+  normalizeSanskritAvagraha,
+  normalizeDevanagariVowelsAndMatras,
+} from "../server/ocr/devanagariCorrections.js";
+import {
+  validateDevanagariText,
+  calculateSanskritTextQuality,
+  DEVANAGARI_ISSUE_CODES,
+} from "../server/ocr/sanskritValidator.js";
+import { removeScanBorders, normalizeResolution } from "../server/ocr/preprocess.js";
+import { calculateConfidence, CONFIDENCE_LEVELS } from "../server/ocr/confidence.js";
 
 let totalTests = 0;
 let passedTests = 0;
@@ -242,6 +259,13 @@ async function runBenchmark() {
   const krutiConverted = convertKrutiDevToUnicode(krutiSample.krutiDevText);
   assert(krutiConverted.includes("ग्रह") || krutiConverted.includes("शनि") || krutiConverted.includes("और"), `Kruti Dev successfully converted: "${krutiConverted}"`);
 
+  // 2.3.1 Chanakya / Walkman-Chanakya font detection and conversion
+  const chanakyaSample = createChanakyaSample();
+  const chanakyaDetect = detectChanakyaEncoding(chanakyaSample.chanakyaText);
+  assert(chanakyaDetect.isChanakya === true, "Chanakya legacy font encoding detected");
+  const chanakyaConverted = convertChanakyaToUnicode(chanakyaSample.chanakyaText);
+  assert(chanakyaConverted.includes("काजो") || chanakyaConverted.includes("।"), `Chanakya successfully converted: "${chanakyaConverted}"`);
+
   // 2.4 Unmapped Devanagari ratio check
   const mojibakeAnalysis = analyzeTextLayer("This was supposed to be a Hindi book but has only Latin ASCII gibberish abcdefghijklmnopqrstuvwxyz", {
     language: "Hindi",
@@ -275,6 +299,22 @@ async function runBenchmark() {
   assert(!cleanedNoisy.includes("~") && !cleanedNoisy.includes("^") && !cleanedNoisy.includes("`"), "Removed isolated scan artifacts (~, ^, `)");
   assert(cleanedNoisy.includes("गुरु") && cleanedNoisy.includes("शनि") && cleanedNoisy.includes("मेष"), "Preserved authentic Hindi astrology terms");
 
+  // 3.4 Visarga normalization from trailing colons
+  const visargaInput = "ॐ नम: शिवाय । राम: पठति । 10:30 बजे Note: Important";
+  const visargaCorrected = correctDevanagariOcrText(visargaInput);
+  assert(visargaCorrected.includes("नमः") && visargaCorrected.includes("रामः"), `Visarga normalized for Sanskrit tokens: "${visargaCorrected}"`);
+  assert(visargaCorrected.includes("10:30") && visargaCorrected.includes("Note:"), "Preserved time formatting and English colons without false conversion");
+
+  // 3.5 Avagraha normalization from 'S' or '5' in Sanskrit compounds
+  const avagrahaInput = "सो S हम् को 5 पि";
+  const avagrahaCorrected = correctDevanagariOcrText(avagrahaInput);
+  assert(avagrahaCorrected.includes("सोऽहम्") || avagrahaCorrected.includes("सोऽ") && avagrahaCorrected.includes("कोऽपि"), `Avagraha reconstructed: "${avagrahaCorrected}"`);
+
+  // 3.6 Canonical vowel decomposition (अा -> आ, अो -> ओ, अौ -> औ)
+  const vowelInput = "अाकाश अोम अौषध";
+  const vowelCorrected = correctDevanagariOcrText(vowelInput);
+  assert(vowelCorrected.includes("आकाश") && vowelCorrected.includes("ओम") && vowelCorrected.includes("औषध"), `Canonical vowels composed: "${vowelCorrected}"`);
+
   // --------------------------------------------------------------------------
   // 4. UNIT TESTS: QUALITY EVALUATION & RETRY DECISIONS
   // --------------------------------------------------------------------------
@@ -302,6 +342,81 @@ async function runBenchmark() {
   }, { language: "Sanskrit", script: "Devanagari" });
   assert(goodEval.passesQuality === true, "Well-formed Sanskrit shloka passes quality evaluation");
   assert(goodEval.compositeScore >= 0.80, `High composite score awarded: ${goodEval.compositeScore}`);
+
+  // --------------------------------------------------------------------------
+  // 5. UNIT TESTS: SANSKRIT STRUCTURAL VALIDATION & 4-TIER CONFIDENCE
+  // --------------------------------------------------------------------------
+  console.log("\n--------------------------------------------------------------------------");
+  console.log("5. UNIT TESTS: SANSKRIT STRUCTURAL VALIDATOR & 4-TIER CONFIDENCE");
+  console.log("--------------------------------------------------------------------------\n");
+
+  // 5.1 Structural validation of clean Sanskrit verse
+  const cleanVerse = "गुरुर्ब्रह्मा गुरुर्विष्णुः गुरुर्देवो महेश्वरः । गुरुः साक्षात् परं ब्रह्म तस्मै श्रीगुरवे नमः ॥";
+  const validResult = validateDevanagariText(cleanVerse);
+  assert(validResult.isValid === true, "Authentic Guru Stotram verse marked valid");
+  assert(validResult.qualityLevel === "HIGH", "Quality level evaluated as HIGH");
+  assert(validResult.score >= 0.95, `Validity score >= 0.95 (actual: ${validResult.score})`);
+
+  // 5.2 Structural validation flagging illegal consecutive halants and orphaned matras
+  const anomalousText = "क््ख कुछ  िगलत ईे शब्द";
+  const anomalyResult = validateDevanagariText(anomalousText);
+  assert(anomalyResult.isValid === false, "Text with illegal virama and dangling matras marked invalid");
+  assert(anomalyResult.issues.some(i => i.code === DEVANAGARI_ISSUE_CODES.ILLEGAL_CONSECUTIVE_VIRAMA), "Flagged ILLEGAL_CONSECUTIVE_VIRAMA");
+  assert(anomalyResult.issues.some(i => i.code === DEVANAGARI_ISSUE_CODES.ORPHANED_COMBINING_MATRA), "Flagged ORPHANED_COMBINING_MATRA");
+  assert(anomalyResult.issues.some(i => i.code === DEVANAGARI_ISSUE_CODES.MATRA_ON_INDEPENDENT_VOWEL), "Flagged MATRA_ON_INDEPENDENT_VOWEL");
+
+  // 5.3 4-Tier confidence calculation
+  // Tier 1: Verified Proofread (human approval)
+  const tierProofread = calculateConfidence([{ confidence: 0.82, text: "Some text" }], null, { proofread: true });
+  assert(tierProofread.tier === CONFIDENCE_LEVELS.VERIFIED_PROOFREAD, "Tier classified as VERIFIED_PROOFREAD");
+  assert(tierProofread.requiresProofreading === false, "Verified proofread requires no further review");
+
+  // Tier 2: High Confidence
+  const tierHigh = calculateConfidence([{ confidence: 0.93, text: cleanVerse }], null, { structuralValidityScore: 0.98 });
+  assert(tierHigh.tier === CONFIDENCE_LEVELS.HIGH_CONFIDENCE, "Tier classified as HIGH_CONFIDENCE");
+  assert(tierHigh.requiresProofreading === false, "High confidence requires no further review");
+
+  // Tier 3: Needs Review (good raw confidence but structural anomalies detected)
+  const tierNeedsReview = calculateConfidence([{ confidence: 0.91, text: anomalousText }], null, { structuralValidityScore: 0.45 });
+  assert(tierNeedsReview.tier === CONFIDENCE_LEVELS.NEEDS_REVIEW, "Degraded to NEEDS_REVIEW due to structural Devanagari defect");
+  assert(tierNeedsReview.requiresProofreading === true, "Needs review requires human proofreading");
+
+  // Tier 4: Low Confidence
+  const tierLow = calculateConfidence([{ confidence: 0.52, text: "Garbled" }], null);
+  assert(tierLow.tier === CONFIDENCE_LEVELS.LOW_CONFIDENCE, "Tier classified as LOW_CONFIDENCE");
+  assert(tierLow.requiresProofreading === true, "Low confidence requires proofreading");
+
+  // --------------------------------------------------------------------------
+  // 6. UNIT TESTS: SCAN BORDER REMOVAL & RESOLUTION NORMALIZATION
+  // --------------------------------------------------------------------------
+  console.log("\n--------------------------------------------------------------------------");
+  console.log("6. UNIT TESTS: SCAN BORDER REMOVAL & RESOLUTION NORMALIZATION");
+  console.log("--------------------------------------------------------------------------\n");
+
+  // 6.1 Scan border removal test
+  const testW = 100, testH = 100;
+  const testPixels = Buffer.alloc(testW * testH * 4, 255); // white
+  // Add dark border on left edge (x: 0..3)
+  for (let y = 0; y < testH; y++) {
+    for (let x = 0; x < 4; x++) {
+      const idx = (y * testW + x) * 4;
+      testPixels[idx] = 10;
+      testPixels[idx + 1] = 10;
+      testPixels[idx + 2] = 10;
+    }
+  }
+  const clearedPixels = removeScanBorders(testPixels, testW, testH);
+  // Check that dark left border has been cleared to 255
+  let borderCleared = true;
+  for (let y = 0; y < testH; y++) {
+    for (let x = 0; x < 4; x++) {
+      if (clearedPixels[(y * testW + x) * 4] < 200) {
+        borderCleared = false;
+        break;
+      }
+    }
+  }
+  assert(borderCleared === true, "Dark scanner edge border cleared to white background");
 
   // --------------------------------------------------------------------------
   // 5. SUMMARY

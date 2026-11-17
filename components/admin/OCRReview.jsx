@@ -2,12 +2,46 @@
 
 import { AlertTriangle, CheckCircle2, ShieldCheck, Tag } from "lucide-react";
 
-export default function OCRReview({ blocks = [], ocrErrors = [], confidence = 0, language = "Hindi" }) {
+export default function OCRReview({
+  blocks = [],
+  ocrErrors = [],
+  confidence = 0,
+  language = "Hindi",
+  isProofread = false,
+  structuralScore = null,
+}) {
   const confPercent = Math.round((confidence || 0) * 100);
 
-  const getConfBadge = (score) => {
-    if (score >= 90) return "bg-emerald-100 text-emerald-800 border-emerald-200";
-    if (score >= 75) return "bg-amber-100 text-amber-800 border-amber-200";
+  const getTierInfo = (score, proofread) => {
+    if (proofread) {
+      return {
+        label: "Verified Proofread",
+        className: "bg-emerald-100 text-emerald-800 border-emerald-300",
+      };
+    }
+    if (score >= 88) {
+      return {
+        label: "High Confidence",
+        className: "bg-emerald-100 text-emerald-800 border-emerald-200",
+      };
+    }
+    if (score >= 70) {
+      return {
+        label: "Needs Review",
+        className: "bg-amber-100 text-amber-800 border-amber-200",
+      };
+    }
+    return {
+      label: "Low Confidence",
+      className: "bg-rose-100 text-rose-800 border-rose-200",
+    };
+  };
+
+  const tier = getTierInfo(confPercent, isProofread);
+
+  const getBlockConfBadge = (score) => {
+    if (score >= 88) return "bg-emerald-100 text-emerald-800 border-emerald-200";
+    if (score >= 70) return "bg-amber-100 text-amber-800 border-amber-200";
     return "bg-rose-100 text-rose-800 border-rose-200";
   };
 
@@ -24,11 +58,9 @@ export default function OCRReview({ blocks = [], ocrErrors = [], confidence = 0,
             Lang: {language}
           </span>
           <span
-            className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${getConfBadge(
-              confPercent
-            )}`}
+            className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${tier.className}`}
           >
-            Confidence: {confPercent}%
+            {tier.label}: {confPercent}%
           </span>
         </div>
       </div>
@@ -75,7 +107,7 @@ export default function OCRReview({ blocks = [], ocrErrors = [], confidence = 0,
                       Block #{b.blockOrder || b.order}
                     </span>
                     {bConf !== null && (
-                      <span className={`px-1.5 py-0.2 rounded-sm font-semibold ${getConfBadge(bConf)}`}>
+                      <span className={`px-1.5 py-0.2 rounded-sm font-semibold ${getBlockConfBadge(bConf)}`}>
                         {bConf}%
                       </span>
                     )}

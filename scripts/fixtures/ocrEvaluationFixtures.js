@@ -273,3 +273,18 @@ export function createKrutiDevSample() {
     type: "LEGACY_KRUTI_DEV",
   };
 }
+
+/**
+ * 10. Legacy Chanakya / Walkman-Chanakya Text Sample
+ */
+export function createChanakyaSample() {
+  // Chanakya encoded sample using standard Chanakya high-ASCII ligature map
+  const chanakyaText = "dàkò àòùñØæçéë Ú Û";
+  const groundTruth = "काजो";
+
+  return {
+    chanakyaText,
+    groundTruth,
+    type: "LEGACY_CHANAKYA",
+  };
+}

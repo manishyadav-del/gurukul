@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/server/security/authGuard";
+import { isAdminRole } from "@/server/admin/permissions";
+import { apiError } from "@/server/security/apiResponse";
 
 // GET /api/user (User profile, reading stats, bookmarks)
 export async function GET(request) {
@@ -19,7 +21,7 @@ export async function GET(request) {
     // Only administrators may query other users' profiles
     let targetEmail = authUser.email;
     if (queryEmail && queryEmail !== authUser.email) {
-      if (authUser.role === "ADMIN") {
+      if (isAdminRole(authUser.role)) {
         targetEmail = queryEmail;
       } else {
         return NextResponse.json(
@@ -58,12 +60,11 @@ export async function GET(request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    // Never leak passwordHash or private credentials
+    const { passwordHash, ...safeUser } = user;
+
+    return NextResponse.json(safeUser);
   } catch (error) {
-    console.error("GET /api/user error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch user data", details: error.message },
-      { status: 500 }
-    );
+    return apiError(error, 500, "USER_FETCH_FAILED", request);
   }
 }

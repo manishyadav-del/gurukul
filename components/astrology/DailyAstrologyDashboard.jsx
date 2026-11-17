@@ -43,6 +43,7 @@ import {
 import NorthIndianChart from "./NorthIndianChart";
 import HoroscopeKnowledgeExplorer from "./HoroscopeKnowledgeExplorer";
 import LiveChoghadiyaWatch from "./LiveChoghadiyaWatch.jsx";
+import VedicCalendarStudio from "./VedicCalendarStudio";
 import { NAKSHATRA_MUHURTA } from "./muhurtaConstants";
 import { RASHI_NAMES_HI } from "./kundliExplanations";
 import {
@@ -272,6 +273,7 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
   const sidebarItems = useMemo(
     () => [
       { id: "overview", label: isHi ? "दैनिक परिदृश्य" : "Daily Overview", icon: Sparkles },
+      { id: "calendar", label: isHi ? "पर्व व व्रत कैलेंडर" : "Festival & Vrata Calendar", icon: Calendar },
       { id: "panchang", label: isHi ? "पंचांग" : "Panchang", icon: Sun },
       { id: "horoscope", label: isHi ? "आज का राशिफल" : "Today's Horoscope", icon: Compass },
       { id: "choghadiya", label: isHi ? "चौघड़िया" : "Choghadiya", icon: Clock },
@@ -1438,6 +1440,15 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
                         </div>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* ------------------------------------------------------------- */}
+                {/* TAB: VEDIC CALENDAR & FESTIVALS                               */}
+                {/* ------------------------------------------------------------- */}
+                {selectedTab === "calendar" && (
+                  <div className="space-y-6">
+                    <VedicCalendarStudio initialTab="calendar" />
                   </div>
                 )}
 

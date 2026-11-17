@@ -1,3 +1,5 @@
+import { correctDevanagariOcrText } from "../ocr/devanagariCorrections.js";
+
 /**
  * Text Cleaning & Indic Normalization for Digital and OCR Astrology Text.
  * 
@@ -67,7 +69,7 @@ export function cleanText(rawText, options = {}) {
     /[\u0900-\u097F]/.test(text);
 
   if (isIndic) {
-    text = normalizeDandas(text);
+    text = correctDevanagariOcrText(text);
   }
 
   // 6. Split lines to process headers, footers, and page number noise

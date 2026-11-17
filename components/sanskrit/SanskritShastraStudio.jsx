@@ -315,21 +315,21 @@ export default function SanskritShastraStudio({ initialVerseId = "bphs-1-1", ini
                       <span className="text-xs font-bold uppercase tracking-wider text-[#13382c]">
                         {isHi ? "पदच्छेद (Word Separation)" : "Pada Cheda (Word Separation)"}
                       </span>
-                      <span className="text-[10px] text-stone-400">Poetic Order</span>
+                      <span className="text-xs text-stone-600 font-bold">Poetic Order</span>
                     </div>
 
                     <div className="flex flex-wrap gap-2 pt-1">
                       {verseAnalysis.padaCheda?.map((word, idx) => (
                         <span
                           key={idx}
-                          className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 font-serif text-sm font-semibold text-stone-800 shadow-2xs"
+                          className="px-3 py-1.5 rounded-lg bg-white border border-stone-200 font-sanskrit text-base font-bold text-stone-900 shadow-2xs"
                         >
                           {word}
                         </span>
                       ))}
                     </div>
 
-                    <p className="text-[11px] text-stone-500 italic pt-2">
+                    <p className="text-xs text-stone-600 font-medium italic pt-2">
                       {isHi
                         ? "संधि-युक्त पदों को पृथक करके मूल पदों का दर्शन।"
                         : "Individual word components isolated from compound euphonic combinations."}
@@ -337,19 +337,19 @@ export default function SanskritShastraStudio({ initialVerseId = "bphs-1-1", ini
                   </div>
 
                   {/* Right: Syntactic Anvaya Order */}
-                  <div className="p-5 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-3">
+                  <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-amber-900">
+                      <span className="text-xs font-bold uppercase tracking-wider text-amber-950">
                         {isHi ? "अन्वय (Syntactic Prose Re-ordering)" : "Syntactic Anvaya Order"}
                       </span>
-                      <span className="text-[10px] text-amber-800/80 font-semibold">Prose Syntax</span>
+                      <span className="text-xs text-amber-900 font-bold">Prose Syntax</span>
                     </div>
 
-                    <p className="text-sm font-serif font-bold text-stone-900 leading-relaxed">
+                    <p className="text-base font-sanskrit font-bold text-stone-950 leading-relaxed">
                       {verseAnalysis.anvaya?.map((a) => a.word).join(" ")}
                     </p>
 
-                    <p className="text-[11px] text-stone-600 italic pt-2">
+                    <p className="text-xs text-stone-700 font-medium italic pt-2">
                       {isHi
                         ? "कर्ता, कर्म, करण एवं क्रिया के अनुसार व्यवस्थित गद्यात्मक क्रम।"
                         : "Reorganized in logical subject-object-verb prose order for effortless comprehension."}
@@ -365,8 +365,8 @@ export default function SanskritShastraStudio({ initialVerseId = "bphs-1-1", ini
                   </h4>
 
                   <div className="overflow-x-auto rounded-2xl border border-stone-200">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-[#fcfaf5] border-b border-stone-200 text-stone-600 font-semibold">
+                    <table className="w-full text-left text-xs sm:text-sm">
+                      <thead className="bg-[#fcfaf5] border-b border-stone-200 text-stone-700 font-bold uppercase tracking-wider text-xs">
                         <tr>
                           <th className="py-3 px-4">{isHi ? "संस्कृत पद" : "Sanskrit Word"}</th>
                           <th className="py-3 px-4">{isHi ? "व्याकरणिक परिचय" : "Grammatical Classification"}</th>
@@ -377,17 +377,17 @@ export default function SanskritShastraStudio({ initialVerseId = "bphs-1-1", ini
                       <tbody className="divide-y divide-stone-100">
                         {verseAnalysis.anvaya?.map((token, idx) => (
                           <tr key={idx} className="hover:bg-amber-50/40 transition">
-                            <td className="py-3 px-4 font-serif font-bold text-stone-900 text-sm">
+                            <td className="py-3 px-4 font-sanskrit font-bold text-stone-950 text-base">
                               {token.word}
-                              {token.iast && <span className="block text-[10px] text-stone-400 font-sans italic">{token.iast}</span>}
+                              {token.iast && <span className="block text-xs text-stone-600 font-sans italic font-medium">{token.iast}</span>}
                             </td>
                             <td className="py-3 px-4 text-stone-700">
-                              <span className="px-2 py-0.5 rounded bg-stone-100 text-stone-800 text-[11px] font-medium">
+                              <span className="px-2 py-0.5 rounded bg-stone-100 text-stone-900 border border-stone-200 text-xs font-semibold">
                                 {token.grammar}
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-stone-800 font-medium">{token.meaningHi}</td>
-                            <td className="py-3 px-4 text-stone-700">{token.meaningEn}</td>
+                            <td className="py-3 px-4 text-stone-900 font-medium">{token.meaningHi}</td>
+                            <td className="py-3 px-4 text-stone-800 font-medium">{token.meaningEn}</td>
                           </tr>
                         ))}
                       </tbody>

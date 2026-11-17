@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import PagePreview from "./PagePreview.jsx";
 import OCRReview from "./OCRReview.jsx";
 import {
@@ -20,7 +20,25 @@ import {
   Eye,
   Sliders,
   X,
+  Sparkles,
+  BookOpen,
+  Wand2,
 } from "lucide-react";
+
+const QUICK_INSERT_SYMBOLS = [
+  { label: "।", title: "Single Danda (विराम)", val: "।" },
+  { label: "॥", title: "Double Danda (पूर्ण विराम)", val: "॥" },
+  { label: "ऽ", title: "Avagraha (अवग्रह)", val: "ऽ" },
+  { label: "ॐ", title: "Omkara (ॐ)", val: "ॐ" },
+  { label: "्", title: "Halant / Virama (हलन्त)", val: "्" },
+  { label: "ं", title: "Anusvara (अनुस्वार)", val: "ं" },
+  { label: "ः", title: "Visarga (विसर्ग)", val: "ः" },
+  { label: "ँ", title: "Chandrabindu (चन्द्रबिन्दु)", val: "ँ" },
+  { label: "॑", title: "Udatta Accent (उदात्त)", val: "\u0951" },
+  { label: "॒", title: "Anudatta Accent (अनुदात्त)", val: "\u0952" },
+  { label: "ZWJ", title: "Zero Width Joiner (योजक)", val: "\u200D" },
+  { label: "ZWNJ", title: "Zero Width Non-Joiner (वियोजक)", val: "\u200C" },
+];
 
 export default function ProofreadingEditor({
   page,
@@ -55,9 +73,64 @@ export default function ProofreadingEditor({
   const confidenceScore = page?.ocrConfidence !== null ? page.ocrConfidence : 0.85;
   const confPercent = Math.round(confidenceScore * 100);
 
+  const textareaRef = useRef(null);
+
+  // Sanskrit Shastra Intelligence integration
+  const [shastraAnalysis, setShastraAnalysis] = useState(null);
+  const [shastraLoading, setShastraLoading] = useState(false);
+  const [shastraError, setShastraError] = useState(null);
+  const [showShastraPanel, setShowShastraPanel] = useState(false);
+
+  const getQualityTier = (score, isAppr) => {
+    if (isAppr) return { label: "Verified Proofread", badge: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+    if (score >= 0.88) return { label: "High Confidence", badge: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+    if (score >= 0.70) return { label: "Needs Review", badge: "bg-amber-100 text-amber-800 border-amber-300" };
+    return { label: "Low Confidence", badge: "bg-rose-100 text-rose-800 border-rose-300" };
+  };
+
+  const currentTier = getQualityTier(confidenceScore, isApproved);
+
+  const insertAtCursor = (char) => {
+    const el = textareaRef.current;
+    if (!el) {
+      setProofreadText((prev) => prev + char);
+      return;
+    }
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    const text = el.value;
+    const newText = text.substring(0, start) + char + text.substring(end);
+    setProofreadText(newText);
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(start + char.length, start + char.length);
+    }, 0);
+  };
+
+  const handleAnalyzeSanskrit = async () => {
+    if (!proofreadText.trim()) return;
+    setShastraLoading(true);
+    setShastraError(null);
+    try {
+      const res = await fetch("/api/sanskrit/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verseText: proofreadText, language: "en" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Analysis failed");
+      setShastraAnalysis(data.analysis);
+      setShowShastraPanel(true);
+    } catch (err) {
+      setShastraError(err.message || "Failed to analyze verse with Shastra Intelligence");
+    } finally {
+      setShastraLoading(false);
+    }
+  };
+
   const getConfBadge = (score) => {
-    if (score >= 0.9) return "bg-emerald-100 text-emerald-800 border-emerald-300";
-    if (score >= 0.75) return "bg-amber-100 text-amber-800 border-amber-300";
+    if (score >= 0.88) return "bg-emerald-100 text-emerald-800 border-emerald-300";
+    if (score >= 0.70) return "bg-amber-100 text-amber-800 border-amber-300";
     return "bg-rose-100 text-rose-800 border-rose-300";
   };
 
@@ -262,23 +335,15 @@ export default function ProofreadingEditor({
           </span>
           <span className="text-stone-300">•</span>
           <span
-            className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${getConfBadge(
-              confidenceScore
-            )}`}
+            className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border flex items-center gap-1.5 ${currentTier.badge}`}
           >
-            {confPercent}% Confidence
+            {isApproved ? (
+              <Check className="w-3.5 h-3.5 text-emerald-700" />
+            ) : (
+              <ShieldCheck className="w-3.5 h-3.5" />
+            )}
+            <span>{currentTier.label} ({confPercent}%)</span>
           </span>
-          <span className="text-stone-300">•</span>
-          {isApproved ? (
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1 border border-emerald-300">
-              <Check className="w-3 h-3" />
-              <span>Approved</span>
-            </span>
-          ) : (
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-              Needs Review
-            </span>
-          )}
         </div>
 
         {/* Right: Actions */}
@@ -416,12 +481,106 @@ export default function ProofreadingEditor({
           {/* Active Tab Body */}
           <div className="flex-1 p-4 flex flex-col overflow-y-auto">
             {activeTab === "proofread" && (
-              <textarea
-                value={proofreadText}
-                onChange={(e) => setProofreadText(e.target.value)}
-                placeholder="Proofread text here. Sanskrit shlokas, dandas, and Devanagari ligatures are strictly preserved."
-                className="w-full flex-1 p-3.5 text-sm font-serif leading-relaxed text-stone-900 border border-stone-200 rounded-xl focus:outline-none focus:border-amber-500 resize-none font-sans"
-              />
+              <div className="flex-1 flex flex-col gap-2.5">
+                {/* Sanskrit & Devanagari Quick Insert Toolbar */}
+                <div className="flex flex-wrap items-center gap-1.5 p-2 bg-stone-50 border border-stone-200 rounded-xl text-xs">
+                  <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mr-1">
+                    Sanskrit Tools:
+                  </span>
+                  {QUICK_INSERT_SYMBOLS.map((sym) => (
+                    <button
+                      key={sym.label}
+                      type="button"
+                      onClick={() => insertAtCursor(sym.val)}
+                      title={sym.title}
+                      className="px-2 py-0.5 rounded bg-white hover:bg-stone-200 border border-stone-300 text-stone-900 font-serif font-bold text-xs transition cursor-pointer shadow-2xs active:scale-95"
+                    >
+                      {sym.label}
+                    </button>
+                  ))}
+                  <div className="ml-auto flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={handleAnalyzeSanskrit}
+                      disabled={shastraLoading || !proofreadText.trim()}
+                      className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      {shastraLoading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                      )}
+                      <span>Shastra Intelligence</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Shastra Analysis Insight Panel */}
+                {showShastraPanel && (
+                  <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl space-y-2 text-xs">
+                    <div className="flex items-center justify-between pb-1.5 border-b border-amber-200">
+                      <div className="flex items-center gap-1.5">
+                        <BookOpen className="w-4 h-4 text-amber-700" />
+                        <span className="font-bold text-amber-950 font-serif">
+                          Sanskrit Shastra Intelligence Insights
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setShowShastraPanel(false)}
+                        className="text-stone-400 hover:text-stone-700 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {shastraError && (
+                      <p className="text-rose-700 text-xs">{shastraError}</p>
+                    )}
+
+                    {shastraAnalysis && (
+                      <div className="space-y-2">
+                        {shastraAnalysis.meter && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-amber-900">Detected Meter / Chhandas:</span>
+                            <span className="font-mono bg-white px-2 py-0.5 rounded border border-amber-200 text-amber-800 text-[11px]">
+                              {shastraAnalysis.meter.name || "Classical Shloka"}
+                            </span>
+                          </div>
+                        )}
+                        {shastraAnalysis.sandhi && shastraAnalysis.sandhi.length > 0 && (
+                          <div>
+                            <span className="font-semibold text-amber-900 block mb-1">Sandhi Splits:</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {shastraAnalysis.sandhi.slice(0, 6).map((s, idx) => (
+                                <span key={idx} className="bg-white px-2 py-0.5 rounded border border-amber-200 font-serif text-stone-800 text-[11px]">
+                                  {s.original} → {s.split?.join(" + ")}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {shastraAnalysis.anvaya && (
+                          <div>
+                            <span className="font-semibold text-amber-900 block mb-0.5">Anvaya (Prose Order):</span>
+                            <p className="bg-white p-2 rounded border border-amber-200 font-serif text-stone-800 text-xs italic">
+                              {typeof shastraAnalysis.anvaya === "string" ? shastraAnalysis.anvaya : JSON.stringify(shastraAnalysis.anvaya)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Proofreading Textarea */}
+                <textarea
+                  ref={textareaRef}
+                  value={proofreadText}
+                  onChange={(e) => setProofreadText(e.target.value)}
+                  placeholder="Proofread text here. Sanskrit shlokas, dandas, and Devanagari ligatures are strictly preserved."
+                  className="w-full flex-1 p-3.5 text-sm font-serif leading-relaxed text-stone-900 border border-stone-200 rounded-xl focus:outline-none focus:border-amber-500 resize-none font-sans min-h-[340px]"
+                />
+              </div>
             )}
 
             {activeTab === "cleaned" && (
@@ -503,6 +662,7 @@ export default function ProofreadingEditor({
               ocrErrors={page.ocrErrors || []}
               confidence={page.ocrConfidence}
               language={page.language}
+              isProofread={isApproved}
             />
           </div>
         </div>
