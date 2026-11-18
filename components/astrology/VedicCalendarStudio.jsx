@@ -31,6 +31,7 @@ import {
   Filter,
 } from "lucide-react";
 import { WORLD_CITIES, formatTzOffset, estimateTzFromLongitude } from "./worldLocations";
+import WorldLocationModal from "./WorldLocationModal";
 
 const PRESET_CITIES = WORLD_CITIES;
 
@@ -442,94 +443,23 @@ export default function VedicCalendarStudio({ initialTab = "calendar" }) {
         </div>
       </div>
 
-      {/* 2. Custom Location Modal */}
-      {showCustomCityModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl border border-[#ede5d6] shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#ede5d6] pb-3">
-              <h3 className="text-sm font-bold text-stone-900 font-serif">
-                {isHi ? "कस्टम स्थान समन्वय दर्ज करें" : "Enter Custom Coordinates"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowCustomCityModal(false)}
-                className="p-1 rounded-lg text-stone-400 hover:text-stone-700"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-semibold text-stone-700 block mb-1">Place Name</label>
-                <input
-                  type="text"
-                  value={customCityForm.name}
-                  onChange={(e) => setCustomCityForm({ ...customCityForm, name: e.target.value })}
-                  className="w-full bg-[#faf7f0] border border-[#ede5d6] rounded-xl px-3 py-2 text-xs"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-stone-700 block mb-1">Latitude (°N)</label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    value={customCityForm.lat}
-                    onChange={(e) => setCustomCityForm({ ...customCityForm, lat: e.target.value })}
-                    className="w-full bg-[#faf7f0] border border-[#ede5d6] rounded-xl px-3 py-2 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-stone-700 block mb-1">Longitude (°E)</label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    value={customCityForm.lon}
-                    onChange={(e) => setCustomCityForm({ ...customCityForm, lon: e.target.value })}
-                    className="w-full bg-[#faf7f0] border border-[#ede5d6] rounded-xl px-3 py-2 text-xs"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-stone-700 block mb-1">Timezone Offset (Hours from UTC)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  value={customCityForm.tz}
-                  onChange={(e) => setCustomCityForm({ ...customCityForm, tz: e.target.value })}
-                  className="w-full bg-[#faf7f0] border border-[#ede5d6] rounded-xl px-3 py-2 text-xs"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowCustomCityModal(false)}
-                className="px-4 py-2 rounded-xl bg-stone-100 text-stone-700 text-xs font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedCity({
-                    name: customCityForm.name || "Custom Place",
-                    lat: parseFloat(customCityForm.lat),
-                    lon: parseFloat(customCityForm.lon),
-                    tz: parseFloat(customCityForm.tz),
-                    tzStr: `UTC${formatTzOffset(parseFloat(customCityForm.tz))}`,
-                    category: "Custom",
-                  });
-                  setShowCustomCityModal(false);
-                }}
-                className="px-4 py-2 rounded-xl bg-[#13382c] text-white text-xs font-semibold shadow-xs"
-              >
-                Apply Location
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 2. Custom Location Modal with Country > State > Town Auto Calculation */}
+      <WorldLocationModal
+        isOpen={showCustomCityModal}
+        onClose={() => setShowCustomCityModal(false)}
+        onApply={(location) => {
+          setSelectedCity(location);
+          setCustomCityForm({
+            name: location.name,
+            lat: String(location.lat),
+            lon: String(location.lon),
+            tz: String(location.tz),
+          });
+          setShowCustomCityModal(false);
+        }}
+        initialLocation={selectedCity}
+        isHi={false}
+      />
 
       {/* 3. Main Views */}
       {loading ? (

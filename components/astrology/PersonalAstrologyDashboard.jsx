@@ -35,6 +35,7 @@ import NorthIndianChart from "./NorthIndianChart";
 import DashaTimelineView from "./DashaTimelineView";
 import TransitIntelligenceView from "./TransitIntelligenceView";
 import PersonalJyotishAssistant from "./PersonalJyotishAssistant";
+import WorldLocationModal from "./WorldLocationModal";
 import { WORLD_CITIES } from "./worldLocations";
 
 export default function PersonalAstrologyDashboard({ initialLanguage = "en" }) {
@@ -62,6 +63,7 @@ export default function PersonalAstrologyDashboard({ initialLanguage = "en" }) {
     gender: "unspecified",
   });
   const [citySearch, setCitySearch] = useState("");
+  const [showBirthLocationModal, setShowBirthLocationModal] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState(null);
 
@@ -1190,9 +1192,18 @@ export default function PersonalAstrologyDashboard({ initialLanguage = "en" }) {
               </div>
 
               <div>
-                <label className="block text-stone-700 font-bold mb-1">
-                  {isHi ? "जन्म स्थान" : "Place of Birth (City / Town)"} *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-stone-700 font-bold">
+                    {isHi ? "जन्म स्थान" : "Place of Birth (City / Town)"} *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowBirthLocationModal(true)}
+                    className="text-xs text-[#c4903c] font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>🌐 {isHi ? "देश > राज्य > नगर से स्वतः चुनें" : "Auto Country > State > Town"}</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
@@ -1272,6 +1283,32 @@ export default function PersonalAstrologyDashboard({ initialLanguage = "en" }) {
           </div>
         </div>
       )}
+
+      {/* Location Modal for Birth Place */}
+      <WorldLocationModal
+        isOpen={showBirthLocationModal}
+        onClose={() => setShowBirthLocationModal(false)}
+        onApply={(loc) => {
+          setProfileForm((prev) => ({
+            ...prev,
+            birthPlace: loc.name,
+            latitude: loc.lat,
+            longitude: loc.lon,
+            timezone: loc.tzStr || String(loc.tz),
+          }));
+          setCitySearch(loc.name);
+          setShowBirthLocationModal(false);
+        }}
+        initialLocation={{
+          name: profileForm.birthPlace,
+          lat: profileForm.latitude,
+          lon: profileForm.longitude,
+          tz: profileForm.timezone,
+        }}
+        isHi={isHi}
+        title={isHi ? "जन्म स्थान का स्वतः चयन" : "Select Birth Place"}
+        subtitle={isHi ? "देश, राज्य व नगर से अक्षांश, देशांतर और समय-क्षेत्र स्वतः भरें।" : "Automatic coordinates & timezone calculated by location hierarchy."}
+      />
 
       {/* 5. Astrology Journal Modal */}
       {journalModalOpen && (

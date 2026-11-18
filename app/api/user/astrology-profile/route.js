@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/server/security/authGuard";
 import { calculateBirthChart } from "@/server/astrology/engine";
 import { validateBirthDetails, parseTimezoneOffsetMinutes } from "@/server/astrology/validation";
-import { WORLD_CITIES } from "@/components/astrology/worldLocations";
+import { WORLD_CITIES, resolveLocationAutomatically } from "@/components/astrology/worldLocations";
 
 /**
  * Resolves latitude, longitude, and timezone offset if missing from input.
@@ -14,14 +14,21 @@ function resolveLocationCoordinates(input) {
   let tz = input.timezone || null;
 
   if ((lat === null || isNaN(lat) || lon === null || isNaN(lon)) && input.birthPlace) {
-    const cleanPlace = input.birthPlace.toLowerCase().trim();
-    const matchedCity = WORLD_CITIES.find((c) =>
-      c.name.toLowerCase().includes(cleanPlace) || cleanPlace.includes(c.name.toLowerCase().split(",")[0].trim())
-    );
-    if (matchedCity) {
-      lat = matchedCity.lat;
-      lon = matchedCity.lon;
-      if (!tz) tz = matchedCity.tzStr || String(matchedCity.tz);
+    const autoResolved = resolveLocationAutomatically(input.birthPlace);
+    if (autoResolved) {
+      lat = autoResolved.lat;
+      lon = autoResolved.lon;
+      if (!tz) tz = autoResolved.tzStr || String(autoResolved.tz);
+    } else {
+      const cleanPlace = input.birthPlace.toLowerCase().trim();
+      const matchedCity = WORLD_CITIES.find((c) =>
+        c.name.toLowerCase().includes(cleanPlace) || cleanPlace.includes(c.name.toLowerCase().split(",")[0].trim())
+      );
+      if (matchedCity) {
+        lat = matchedCity.lat;
+        lon = matchedCity.lon;
+        if (!tz) tz = matchedCity.tzStr || String(matchedCity.tz);
+      }
     }
   }
 

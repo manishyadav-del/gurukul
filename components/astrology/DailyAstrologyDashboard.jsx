@@ -36,6 +36,7 @@ import {
   Bookmark,
   CheckCheck,
   User,
+  Users,
   Globe,
   X,
   Network,
@@ -44,6 +45,9 @@ import NorthIndianChart from "./NorthIndianChart";
 import HoroscopeKnowledgeExplorer from "./HoroscopeKnowledgeExplorer";
 import LiveChoghadiyaWatch from "./LiveChoghadiyaWatch.jsx";
 import VedicCalendarStudio from "./VedicCalendarStudio";
+import WorldLocationModal from "./WorldLocationModal";
+import FamilyAstrologyCircle from "./FamilyAstrologyCircle";
+import PanchangKnowledgeModal from "./PanchangKnowledgeModal";
 import { NAKSHATRA_MUHURTA } from "./muhurtaConstants";
 import { RASHI_NAMES_HI } from "./kundliExplanations";
 import {
@@ -227,12 +231,20 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
 
   // Custom Location Modal for header selector
   const [showCustomCityModal, setShowCustomCityModal] = useState(false);
+  const [showKundliLocationModal, setShowKundliLocationModal] = useState(false);
   const [customCityForm, setCustomCityForm] = useState({
     name: "Custom Location",
     lat: "28.6139",
     lon: "77.2090",
     tz: "5.5",
     tzStr: "Asia/Kolkata",
+  });
+
+  // Panchang Shastric Knowledge Modal
+  const [knowledgeModalState, setKnowledgeModalState] = useState({
+    isOpen: false,
+    elementKey: "tithi",
+    data: null,
   });
 
   // Kundli Calculator Form & State
@@ -273,6 +285,7 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
   const sidebarItems = useMemo(
     () => [
       { id: "overview", label: isHi ? "दैनिक परिदृश्य" : "Daily Overview", icon: Sparkles },
+      { id: "family", label: isHi ? "पारिवारिक कुंडली" : "Family Circle", icon: Users },
       { id: "calendar", label: isHi ? "पर्व व व्रत कैलेंडर" : "Festival & Vrata Calendar", icon: Calendar },
       { id: "panchang", label: isHi ? "पंचांग" : "Panchang", icon: Sun },
       { id: "horoscope", label: isHi ? "आज का राशिफल" : "Today's Horoscope", icon: Compass },
@@ -734,203 +747,61 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
           </div>
         </div>
 
-        {/* Custom Location Modal for Header Selector */}
-        {showCustomCityModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-            <div className="bg-white rounded-2xl border border-[#ede5d6] shadow-2xl max-w-md w-full p-5 sm:p-6 space-y-4 relative">
-              <div className="flex items-center justify-between border-b border-[#ede5d6] pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-[#faf7f0] text-[#c4903c] border border-[#ede5d6]">
-                    <Globe className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-stone-900 font-serif">
-                      {isHi ? "विश्व का कोई भी स्थान जोड़ें" : "Add Any Location in the World"}
-                    </h3>
-                    <p className="text-[11px] text-stone-500">
-                      {isHi
-                        ? "पंचांग, लग्न व चौघड़िया के लिए किसी भी स्थान का सटीक समन्वय दर्ज करें।"
-                        : "High-precision calculations for any city, town, or coordinates on Earth."}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowCustomCityModal(false)}
-                  className="p-1.5 hover:bg-stone-100 rounded-lg text-stone-400 hover:text-stone-700 transition cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+        {/* Custom Location Modal for Header Selector (Country > State > Town Hierarchy & Auto-calculation) */}
+        <WorldLocationModal
+          isOpen={showCustomCityModal}
+          onClose={() => setShowCustomCityModal(false)}
+          onApply={(location) => {
+            setSelectedCity(location);
+            setCustomCityForm({
+              name: location.name,
+              lat: String(location.lat),
+              lon: String(location.lon),
+              tz: String(location.tz),
+              tzStr: location.tzStr,
+            });
+            setShowCustomCityModal(false);
+          }}
+          initialLocation={selectedCity}
+          isHi={isHi}
+        />
 
-              <div className="space-y-3.5">
-                <div>
-                  <label className="text-xs font-semibold text-stone-700 block mb-1">
-                    {isHi ? "स्थान का नाम (Place Name)" : "Place Name"}
-                  </label>
-                  <input
-                    type="text"
-                    value={customCityForm.name}
-                    onChange={(e) => setCustomCityForm({ ...customCityForm, name: e.target.value })}
-                    placeholder="e.g. Paris, France or Tokyo, Japan or Ayodhya, India"
-                    className="w-full bg-[#faf7f0] border border-[#ede5d6] rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:bg-white"
-                  />
-                </div>
+        {/* Dedicated Location Modal for Kundli Form */}
+        <WorldLocationModal
+          isOpen={showKundliLocationModal}
+          onClose={() => setShowKundliLocationModal(false)}
+          onApply={(location) => {
+            setKundliForm((prev) => ({
+              ...prev,
+              isCustomPlace: true,
+              place: "__custom__",
+              customPlaceName: location.name,
+              customLat: String(location.lat),
+              customLon: String(location.lon),
+              customTz: location.tzStr || formatTzOffset(location.tz),
+            }));
+            setShowKundliLocationModal(false);
+          }}
+          initialLocation={{
+            name: kundliForm.customPlaceName || kundliForm.place,
+            lat: kundliForm.customLat,
+            lon: kundliForm.customLon,
+            tz: 5.5,
+          }}
+          isHi={isHi}
+          title={isHi ? "कुंडली जन्म स्थान चुनें" : "Select Kundli Birth Location"}
+          subtitle={isHi ? "देश, राज्य व नगर से अक्षांश व देशांतर की स्वतः गणना।" : "Country > State > Town with automatic coordinates & timezone for exact Kundli."}
+        />
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold text-stone-700 block mb-1">
-                      {isHi ? "अक्षांश (Latitude: -90° to 90°)" : "Latitude (-90° to 90°)"}
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      min="-90"
-                      max="90"
-                      value={customCityForm.lat}
-                      onChange={(e) => setCustomCityForm({ ...customCityForm, lat: e.target.value })}
-                      placeholder="e.g. 48.8566"
-                      className="w-full bg-[#faf7f0] border border-[#ede5d6] rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:bg-white"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-stone-700 block">
-                        {isHi ? "देशांतर (-180° to 180°)" : "Longitude (-180° to 180°)"}
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const estTz = estimateTzFromLongitude(customCityForm.lon);
-                          setCustomCityForm((f) => ({
-                            ...f,
-                            tz: estTz.toString(),
-                            tzStr: `UTC${formatTzOffset(estTz)}`,
-                          }));
-                        }}
-                        className="text-[10px] text-[#c4903c] font-semibold hover:underline cursor-pointer"
-                      >
-                        {isHi ? "स्वतः TZ" : "Auto TZ"}
-                      </button>
-                    </div>
-                    <input
-                      type="number"
-                      step="any"
-                      min="-180"
-                      max="180"
-                      value={customCityForm.lon}
-                      onChange={(e) => {
-                        const newLon = e.target.value;
-                        const estTz = estimateTzFromLongitude(newLon);
-                        setCustomCityForm({
-                          ...customCityForm,
-                          lon: newLon,
-                          tz: estTz.toString(),
-                          tzStr: `UTC${formatTzOffset(estTz)}`,
-                        });
-                      }}
-                      placeholder="e.g. 2.3522"
-                      className="w-full bg-[#faf7f0] border border-[#ede5d6] rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-stone-700 block mb-1">
-                    {isHi ? "समय क्षेत्र ऑफसेट (Timezone Offset in Hours)" : "Timezone Offset (Hours from UTC)"}
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <select
-                      value={
-                        COMMON_TIMEZONES.some(
-                          (tz) => {
-                            const [hStr, mStr] = tz.value.replace("+", "").split(":");
-                            const val = parseFloat(hStr) + (parseFloat(mStr || "0") / 60) * (tz.value.startsWith("-") ? -1 : 1);
-                            return Math.abs(val - parseFloat(customCityForm.tz)) < 0.05;
-                          }
-                        )
-                          ? customCityForm.tz
-                          : "custom"
-                      }
-                      onChange={(e) => {
-                        if (e.target.value !== "custom") {
-                          const hours = parseFloat(e.target.value);
-                          setCustomCityForm({
-                            ...customCityForm,
-                            tz: hours.toString(),
-                            tzStr: `UTC${formatTzOffset(hours)}`,
-                          });
-                        }
-                      }}
-                      className="w-full bg-[#faf7f0] border border-[#ede5d6] rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:outline-none focus:bg-white"
-                    >
-                      {COMMON_TIMEZONES.map((tz) => {
-                        const sign = tz.value.startsWith("-") ? -1 : 1;
-                        const [hStr, mStr] = tz.value.replace(/^[+-]/, "").split(":");
-                        const h = sign * (parseFloat(hStr) + (parseFloat(mStr || "0") / 60));
-                        return (
-                          <option key={tz.value} value={h.toString()}>
-                            {tz.label}
-                          </option>
-                        );
-                      })}
-                      <option value="custom">Custom hours offset...</option>
-                    </select>
-                    <input
-                      type="number"
-                      step="0.25"
-                      min="-12"
-                      max="14"
-                      value={customCityForm.tz}
-                      onChange={(e) =>
-                        setCustomCityForm({
-                          ...customCityForm,
-                          tz: e.target.value,
-                          tzStr: `UTC${formatTzOffset(parseFloat(e.target.value) || 0)}`,
-                        })
-                      }
-                      placeholder="e.g. 5.5, 9, -5"
-                      className="w-full bg-[#faf7f0] border border-[#ede5d6] rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:bg-white"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#ede5d6]">
-                <button
-                  type="button"
-                  onClick={() => setShowCustomCityModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-100 transition cursor-pointer"
-                >
-                  {isHi ? "रद्द करें" : "Cancel"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const latNum = parseFloat(customCityForm.lat);
-                    const lonNum = parseFloat(customCityForm.lon);
-                    const tzNum = parseFloat(customCityForm.tz);
-                    if (isNaN(latNum) || latNum < -90 || latNum > 90) return;
-                    if (isNaN(lonNum) || lonNum < -180 || lonNum > 180) return;
-                    const placeName = customCityForm.name.trim() || `${latNum.toFixed(2)}°, ${lonNum.toFixed(2)}°`;
-                    setSelectedCity({
-                      name: placeName,
-                      lat: latNum,
-                      lon: lonNum,
-                      tz: isNaN(tzNum) ? 0 : tzNum,
-                      tzStr: customCityForm.tzStr || `UTC${formatTzOffset(tzNum || 0)}`,
-                      category: "Custom",
-                    });
-                    setShowCustomCityModal(false);
-                  }}
-                  className="px-5 py-2 rounded-xl bg-[#0f2e22] hover:bg-[#184433] text-white text-xs font-bold shadow-sm transition cursor-pointer"
-                >
-                  {isHi ? "स्थान लागू करें" : "Apply Location"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Panchang Shastric Knowledge Modal */}
+        <PanchangKnowledgeModal
+          isOpen={knowledgeModalState.isOpen}
+          onClose={() => setKnowledgeModalState((prev) => ({ ...prev, isOpen: false }))}
+          elementKey={knowledgeModalState.elementKey}
+          currentData={knowledgeModalState.data}
+          isHi={isHi}
+          onOpenExplorer={openInExplorer}
+        />
 
         {/* Layout Grid: Sidebar + Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -1018,6 +889,15 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
                 {/* ------------------------------------------------------------- */}
                 {selectedTab === "overview" && (
                   <div className="space-y-6">
+                    {/* Family Astrology Circle & Member Switcher */}
+                    <FamilyAstrologyCircle
+                      isHi={isHi}
+                      selectedRashi={selectedRashi}
+                      onSelectRashi={(rashi) => setSelectedRashi(rashi)}
+                      currentPanchang={panchangData}
+                      selectedDate={selectedDate}
+                    />
+
                     {/* Top 2 Cards: Today's Focus & Your Rashi */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Today's Focus */}
@@ -1131,13 +1011,23 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                         {/* Tithi */}
                         <div
-                          onClick={() => openInExplorer("tithi")}
+                          onClick={() =>
+                            setKnowledgeModalState({
+                              isOpen: true,
+                              elementKey: "tithi",
+                              data: {
+                                name: `${panchangData?.tithi?.paksha || ""} ${panchangData?.tithi?.name || ""}`,
+                                sub: panchangData?.tithi?.devanagari,
+                                status: panchangData?.tithi?.paksha === "Shukla" ? "Shukla Paksha (Waxing)" : "Krishna Paksha (Waning)",
+                              },
+                            })
+                          }
                           className="bg-[#faf8f4] border border-[#eee5d6] hover:border-[#c4903c] rounded-xl p-3.5 flex flex-col justify-between cursor-pointer transition shadow-2xs hover:shadow-xs group"
-                          title="Click to explore Tithi in Knowledge Graph"
+                          title="Click to view full Vedic Tithi knowledge"
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] uppercase font-semibold text-stone-400">Tithi</span>
-                            <Network className="w-3 h-3 text-stone-300 group-hover:text-[#c4903c] transition" />
+                            <span className="text-[10px] font-bold text-[#c4903c] group-hover:underline">ज्ञान ℹ️</span>
                           </div>
                           <div className="flex items-center gap-2 mt-2">
                             <Moon className="w-4 h-4 text-[#c4903c] shrink-0" />
@@ -1154,13 +1044,23 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
 
                         {/* Nakshatra */}
                         <div
-                          onClick={() => openInExplorer("nakshatra")}
+                          onClick={() =>
+                            setKnowledgeModalState({
+                              isOpen: true,
+                              elementKey: "nakshatra",
+                              data: {
+                                name: panchangData?.nakshatra?.name,
+                                sub: `${panchangData?.nakshatra?.devanagari || ""} (Pada ${panchangData?.nakshatra?.pada || 1})`,
+                                status: "Cosmic Star Mansion",
+                              },
+                            })
+                          }
                           className="bg-[#faf8f4] border border-[#eee5d6] hover:border-[#c4903c] rounded-xl p-3.5 flex flex-col justify-between cursor-pointer transition shadow-2xs hover:shadow-xs group"
-                          title="Click to explore Nakshatra in Knowledge Graph"
+                          title="Click to view Nakshatra deity & attributes"
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] uppercase font-semibold text-stone-400">Nakshatra</span>
-                            <Network className="w-3 h-3 text-stone-300 group-hover:text-[#c4903c] transition" />
+                            <span className="text-[10px] font-bold text-[#c4903c] group-hover:underline">ज्ञान ℹ️</span>
                           </div>
                           <div className="flex items-center gap-2 mt-2">
                             <Sparkles className="w-4 h-4 text-[#c4903c] shrink-0" />
@@ -1177,13 +1077,23 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
 
                         {/* Yoga */}
                         <div
-                          onClick={() => openInExplorer("yoga")}
+                          onClick={() =>
+                            setKnowledgeModalState({
+                              isOpen: true,
+                              elementKey: "yoga",
+                              data: {
+                                name: panchangData?.yoga?.name,
+                                sub: panchangData?.yoga?.devanagari,
+                                status: "Solar-Lunar Harmony",
+                              },
+                            })
+                          }
                           className="bg-[#faf8f4] border border-[#eee5d6] hover:border-[#c4903c] rounded-xl p-3.5 flex flex-col justify-between cursor-pointer transition shadow-2xs hover:shadow-xs group"
-                          title="Click to explore Yoga in Knowledge Graph"
+                          title="Click to view Yoga effect & auspiciousness"
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] uppercase font-semibold text-stone-400">Yoga</span>
-                            <Network className="w-3 h-3 text-stone-300 group-hover:text-[#c4903c] transition" />
+                            <span className="text-[10px] font-bold text-[#c4903c] group-hover:underline">ज्ञान ℹ️</span>
                           </div>
                           <div className="flex items-center gap-2 mt-2">
                             <Sun className="w-4 h-4 text-[#c4903c] shrink-0" />
@@ -1200,13 +1110,23 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
 
                         {/* Karana */}
                         <div
-                          onClick={() => openInExplorer("karana")}
+                          onClick={() =>
+                            setKnowledgeModalState({
+                              isOpen: true,
+                              elementKey: "karana",
+                              data: {
+                                name: panchangData?.karana?.name,
+                                sub: panchangData?.karana?.devanagari,
+                                status: "Half-Tithi Action Window",
+                              },
+                            })
+                          }
                           className="bg-[#faf8f4] border border-[#eee5d6] hover:border-[#c4903c] rounded-xl p-3.5 flex flex-col justify-between cursor-pointer transition shadow-2xs hover:shadow-xs group"
-                          title="Click to explore Karana in Knowledge Graph"
+                          title="Click to view Karana guidelines & Bhadra check"
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] uppercase font-semibold text-stone-400">Karana</span>
-                            <Network className="w-3 h-3 text-stone-300 group-hover:text-[#c4903c] transition" />
+                            <span className="text-[10px] font-bold text-[#c4903c] group-hover:underline">ज्ञान ℹ️</span>
                           </div>
                           <div className="flex items-center gap-2 mt-2">
                             <Layers className="w-4 h-4 text-[#c4903c] shrink-0" />
@@ -1223,13 +1143,23 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
 
                         {/* Vara */}
                         <div
-                          onClick={() => openInExplorer("vara")}
+                          onClick={() =>
+                            setKnowledgeModalState({
+                              isOpen: true,
+                              elementKey: "vara",
+                              data: {
+                                name: `${panchangData?.vara?.en || ""} (${panchangData?.vara?.hi || ""})`,
+                                sub: `Lord ${panchangData?.vara?.lord || "Mars"}`,
+                                status: "Weekday Ruler",
+                              },
+                            })
+                          }
                           className="bg-[#faf8f4] border border-[#eee5d6] hover:border-[#c4903c] rounded-xl p-3.5 flex flex-col justify-between cursor-pointer transition shadow-2xs hover:shadow-xs group"
-                          title="Click to explore Vara in Knowledge Graph"
+                          title="Click to view Weekday Lord & remedies"
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] uppercase font-semibold text-stone-400">Vara</span>
-                            <Network className="w-3 h-3 text-stone-300 group-hover:text-[#c4903c] transition" />
+                            <span className="text-[10px] font-bold text-[#c4903c] group-hover:underline">ज्ञान ℹ️</span>
                           </div>
                           <div className="flex items-center gap-2 mt-2">
                             <Calendar className="w-4 h-4 text-[#c4903c] shrink-0" />
@@ -1245,7 +1175,7 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
                         </div>
                       </div>
 
-                      {/* Sub-bar: Sunrise, Sunset, Rahu Kaal */}
+                      {/* Sub-bar: Sunrise, Sunset, Rahu Kaal, Moon Sign */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3 border-t border-stone-100 text-xs">
                         <div>
                           <span className="text-[10px] text-stone-400 block">{isHi ? "सूर्योदय" : "Sunrise"}</span>
@@ -1256,7 +1186,7 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
                           <span className="font-semibold text-stone-800">{panchangData?.sunset?.local || "—"}</span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-stone-400 block">{isHi ? "राहुकाल" : "Rahu Kaal"}</span>
+                          <span className="text-[10px] text-stone-400 block">{isHi ? "राहुकाल (वर्जित)" : "Rahu Kaal"}</span>
                           <span className="font-semibold text-amber-900">
                             {panchangData?.rahuKaal ? `${panchangData.rahuKaal.startLocal} – ${panchangData.rahuKaal.endLocal}` : "—"}
                           </span>
@@ -1265,6 +1195,91 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
                           <span className="text-[10px] text-stone-400 block">{isHi ? "चंद्र राशि" : "Moon Sign"}</span>
                           <span className="font-semibold text-stone-800">
                             {panchangData?.moonSign?.name} ({panchangData?.moonSign?.sanskritName})
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Auspicious & Inauspicious Muhurta Highlights Bar */}
+                      <div className="bg-[#faf8f4] border border-[#ede5d6] rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-1.5 text-stone-600 font-semibold text-[11px]">
+                          <Clock className="w-3.5 h-3.5 text-[#c4903c]" />
+                          <span>{isHi ? "आज के मुख्य मुहूर्त काल:" : "Key Timings Today (Click to Learn):"}</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Abhijit Muhurta */}
+                          <span
+                            onClick={() =>
+                              setKnowledgeModalState({
+                                isOpen: true,
+                                elementKey: "muhurta",
+                                data: {
+                                  name: isHi ? "अभिजित मुहूर्त (अति शुभ)" : "Abhijit Muhurta (Most Auspicious)",
+                                  sub: "11:45 AM – 12:35 PM (Around Solar Midday)",
+                                  status: "Auspicious ✓",
+                                },
+                              })
+                            }
+                            className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-900 border border-emerald-300 font-semibold cursor-pointer hover:bg-emerald-200 transition text-[11px] flex items-center gap-1"
+                            title="Click for Abhijit Muhurta details"
+                          >
+                            <span>🟢 {isHi ? "अभिजित: 11:45 – 12:35" : "Abhijit: 11:45 – 12:35"}</span>
+                          </span>
+
+                          {/* Amrit Kaal */}
+                          <span
+                            onClick={() =>
+                              setKnowledgeModalState({
+                                isOpen: true,
+                                elementKey: "muhurta",
+                                data: {
+                                  name: isHi ? "अमृत काल (अमृत योग)" : "Amrit Kaal (Nectar Window)",
+                                  sub: "Classically best for ceremonies, mantras, and long-term endeavors.",
+                                  status: "Good",
+                                },
+                              })
+                            }
+                            className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 font-semibold cursor-pointer hover:bg-amber-200 transition text-[11px]"
+                            title="Click for Amrit Kaal details"
+                          >
+                            <span>🟡 {isHi ? "अमृत काल" : "Amrit Kaal"}</span>
+                          </span>
+
+                          {/* Rahu Kaal Warning */}
+                          <span
+                            onClick={() =>
+                              setKnowledgeModalState({
+                                isOpen: true,
+                                elementKey: "muhurta",
+                                data: {
+                                  name: isHi ? "राहु काल (वर्जित समय)" : "Rahu Kaal (Period of Caution)",
+                                  sub: panchangData?.rahuKaal ? `${panchangData.rahuKaal.startLocal} – ${panchangData.rahuKaal.endLocal}` : "Avoid starting major new works",
+                                  status: "Caution ⚠️",
+                                },
+                              })
+                            }
+                            className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-800 border border-rose-200 font-semibold cursor-pointer hover:bg-rose-100 transition text-[11px]"
+                            title="Click for Rahu Kaal details"
+                          >
+                            <span>🔴 {isHi ? `राहुकाल: ${panchangData?.rahuKaal?.startLocal || ""}` : `Rahu Kaal: ${panchangData?.rahuKaal?.startLocal || ""}`}</span>
+                          </span>
+
+                          {/* Brahma Muhurta */}
+                          <span
+                            onClick={() =>
+                              setKnowledgeModalState({
+                                isOpen: true,
+                                elementKey: "muhurta",
+                                data: {
+                                  name: isHi ? "ब्रह्म मुहूर्त (साधना काल)" : "Brahma Muhurta (Meditation)",
+                                  sub: "04:30 AM – 05:18 AM (1h 36m before Sunrise)",
+                                  status: "Spiritual",
+                                },
+                              })
+                            }
+                            className="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-800 border border-purple-200 font-semibold cursor-pointer hover:bg-purple-100 transition text-[11px]"
+                            title="Click for Brahma Muhurta details"
+                          >
+                            <span>🟣 {isHi ? "ब्रह्म मुहूर्त" : "Brahma Muhurta"}</span>
                           </span>
                         </div>
                       </div>
@@ -1440,6 +1455,21 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
                         </div>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* ------------------------------------------------------------- */}
+                {/* TAB: FAMILY ASTROLOGY CIRCLE                                  */}
+                {/* ------------------------------------------------------------- */}
+                {selectedTab === "family" && (
+                  <div className="space-y-6">
+                    <FamilyAstrologyCircle
+                      isHi={isHi}
+                      selectedRashi={selectedRashi}
+                      onSelectRashi={(rashi) => setSelectedRashi(rashi)}
+                      currentPanchang={panchangData}
+                      selectedDate={selectedDate}
+                    />
                   </div>
                 )}
 
@@ -2063,28 +2093,38 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
                                   <label className="text-[11px] font-semibold text-stone-600 block">
                                     {isHi ? "जन्म स्थान (Birth Place)" : "Birth Place"}
                                   </label>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setKundliForm((prev) => ({
-                                        ...prev,
-                                        isCustomPlace: !prev.isCustomPlace,
-                                        customPlaceName: prev.customPlaceName || (prev.place !== "__custom__" ? prev.place : ""),
-                                      }))
-                                    }
-                                    className="text-[10px] text-[#c4903c] hover:underline font-semibold inline-flex items-center gap-1 cursor-pointer"
-                                  >
-                                    <Globe className="w-3 h-3" />
-                                    <span>
-                                      {kundliForm.isCustomPlace || kundliForm.place === "__custom__"
-                                        ? isHi
-                                          ? "← प्रिसेट शहरों से चुनें"
-                                          : "← Choose Presets"
-                                        : isHi
-                                          ? "+ विश्व का कोई भी स्थान"
-                                          : "+ Any Place Worldwide"}
-                                    </span>
-                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowKundliLocationModal(true)}
+                                      className="text-[10px] text-white bg-[#13382c] hover:bg-[#1a4a3b] px-2 py-0.5 rounded-lg font-semibold inline-flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                                      title={isHi ? "देश, राज्य व नगर से स्वतः अक्षांश/देशांतर चुनें" : "Select Country > State > Town (Auto Calculated)"}
+                                    >
+                                      <Globe className="w-3 h-3 text-[#c4903c]" />
+                                      <span>{isHi ? "स्वतः स्थान चयन" : "Auto Location"}</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setKundliForm((prev) => ({
+                                          ...prev,
+                                          isCustomPlace: !prev.isCustomPlace,
+                                          customPlaceName: prev.customPlaceName || (prev.place !== "__custom__" ? prev.place : ""),
+                                        }))
+                                      }
+                                      className="text-[10px] text-[#c4903c] hover:underline font-semibold inline-flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <span>
+                                        {kundliForm.isCustomPlace || kundliForm.place === "__custom__"
+                                          ? isHi
+                                            ? "← प्रिसेट"
+                                            : "← Presets"
+                                          : isHi
+                                            ? "मैन्युअल"
+                                            : "Manual"}
+                                      </span>
+                                    </button>
+                                  </div>
                                 </div>
 
                                 {!kundliForm.isCustomPlace && kundliForm.place !== "__custom__" ? (
