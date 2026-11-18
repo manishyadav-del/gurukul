@@ -225,77 +225,50 @@ export async function POST(request) {
 
     const birthDateObj = new Date(chart.profile.utcDate);
 
-    if (profile) {
-      // Update existing BirthProfile
-      profile = await prisma.birthProfile.update({
-        where: { id: profile.id },
-        data: {
-          name: inputData.name,
-          birthDate: birthDateObj,
-          birthTime: inputData.birthTime,
-          birthPlace: inputData.birthPlace,
-          latitude: inputData.latitude,
-          longitude: inputData.longitude,
-          timezone: inputData.timezone,
-          language: inputData.language,
-          gender: inputData.gender,
-        },
-      });
+    // Atomically persist BirthProfile, BirthChart, and sync User within a single transaction
+    profile = await prisma.$transaction(async (tx) => {
+      let savedProfile;
+      if (profile) {
+        savedProfile = await tx.birthProfile.update({
+          where: { id: profile.id },
+          data: {
+            name: inputData.name,
+            birthDate: birthDateObj,
+            birthTime: inputData.birthTime,
+            birthPlace: inputData.birthPlace,
+            latitude: inputData.latitude,
+            longitude: inputData.longitude,
+            timezone: inputData.timezone,
+            language: inputData.language,
+            gender: inputData.gender,
+          },
+        });
 
-      // Update or create BirthChart
-      if (profile.birthChartId || (await prisma.birthChart.findUnique({ where: { birthProfileId: profile.id } }))) {
-        await prisma.birthChart.update({
+        const existingChart = await tx.birthChart.findUnique({
           where: { birthProfileId: profile.id },
-          data: {
-            ascendant: chart.ascendant.siderealTotalDegree,
-            lagnaSign: chart.ascendant.sign,
-            lagnaDegree: chart.ascendant.degree,
-            ayanamsa: chart.calculation.ayanamsa,
-            ayanamsaValue: chart.calculation.ayanamsaValue,
-            moonSign: chart.moon.sign,
-            moonNakshatra: chart.moon.nakshatra,
-            moonPada: chart.moon.pada,
-            currentDasha: chart.dasha.currentMahadasha,
-            dashaBalance: chart.dasha.balanceText,
-            chartData: chart,
-          },
         });
-      } else {
-        await prisma.birthChart.create({
-          data: {
-            birthProfileId: profile.id,
-            ascendant: chart.ascendant.siderealTotalDegree,
-            lagnaSign: chart.ascendant.sign,
-            lagnaDegree: chart.ascendant.degree,
-            ayanamsa: chart.calculation.ayanamsa,
-            ayanamsaValue: chart.calculation.ayanamsaValue,
-            moonSign: chart.moon.sign,
-            moonNakshatra: chart.moon.nakshatra,
-            moonPada: chart.moon.pada,
-            currentDasha: chart.dasha.currentMahadasha,
-            dashaBalance: chart.dasha.balanceText,
-            calculationEngine: chart.calculation.calculationEngine,
-            engineVersion: chart.calculation.engineVersion,
-            chartData: chart,
-          },
-        });
-      }
-    } else {
-      // Create new BirthProfile and BirthChart
-      profile = await prisma.birthProfile.create({
-        data: {
-          userId: authUser.id,
-          name: inputData.name,
-          birthDate: birthDateObj,
-          birthTime: inputData.birthTime,
-          birthPlace: inputData.birthPlace,
-          latitude: inputData.latitude,
-          longitude: inputData.longitude,
-          timezone: inputData.timezone,
-          language: inputData.language,
-          gender: inputData.gender,
-          birthChart: {
-            create: {
+
+        if (existingChart) {
+          await tx.birthChart.update({
+            where: { birthProfileId: profile.id },
+            data: {
+              ascendant: chart.ascendant.siderealTotalDegree,
+              lagnaSign: chart.ascendant.sign,
+              lagnaDegree: chart.ascendant.degree,
+              ayanamsa: chart.calculation.ayanamsa,
+              ayanamsaValue: chart.calculation.ayanamsaValue,
+              moonSign: chart.moon.sign,
+              moonNakshatra: chart.moon.nakshatra,
+              moonPada: chart.moon.pada,
+              currentDasha: chart.dasha.currentMahadasha,
+              dashaBalance: chart.dasha.balanceText,
+              chartData: chart,
+            },
+          });
+        } else {
+          await tx.birthChart.create({
+            data: {
+              birthProfileId: profile.id,
               ascendant: chart.ascendant.siderealTotalDegree,
               lagnaSign: chart.ascendant.sign,
               lagnaDegree: chart.ascendant.degree,
@@ -310,22 +283,55 @@ export async function POST(request) {
               engineVersion: chart.calculation.engineVersion,
               chartData: chart,
             },
+          });
+        }
+      } else {
+        savedProfile = await tx.birthProfile.create({
+          data: {
+            userId: authUser.id,
+            name: inputData.name,
+            birthDate: birthDateObj,
+            birthTime: inputData.birthTime,
+            birthPlace: inputData.birthPlace,
+            latitude: inputData.latitude,
+            longitude: inputData.longitude,
+            timezone: inputData.timezone,
+            language: inputData.language,
+            gender: inputData.gender,
+            birthChart: {
+              create: {
+                ascendant: chart.ascendant.siderealTotalDegree,
+                lagnaSign: chart.ascendant.sign,
+                lagnaDegree: chart.ascendant.degree,
+                ayanamsa: chart.calculation.ayanamsa,
+                ayanamsaValue: chart.calculation.ayanamsaValue,
+                moonSign: chart.moon.sign,
+                moonNakshatra: chart.moon.nakshatra,
+                moonPada: chart.moon.pada,
+                currentDasha: chart.dasha.currentMahadasha,
+                dashaBalance: chart.dasha.balanceText,
+                calculationEngine: chart.calculation.calculationEngine,
+                engineVersion: chart.calculation.engineVersion,
+                chartData: chart,
+              },
+            },
           },
+        });
+      }
+
+      await tx.user.update({
+        where: { id: authUser.id },
+        data: {
+          dateOfBirth: birthDateObj,
+          birthTime: inputData.birthTime,
+          birthPlace: inputData.birthPlace,
+          gender: inputData.gender,
+          timezone: inputData.timezone,
         },
       });
-    }
 
-    // Sync user model
-    await prisma.user.update({
-      where: { id: authUser.id },
-      data: {
-        dateOfBirth: birthDateObj,
-        birthTime: inputData.birthTime,
-        birthPlace: inputData.birthPlace,
-        gender: inputData.gender,
-        timezone: inputData.timezone,
-      },
-    }).catch(() => null);
+      return savedProfile;
+    });
 
     return NextResponse.json({
       success: true,

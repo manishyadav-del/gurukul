@@ -5,9 +5,13 @@ import { Upload, FileText, CheckCircle2, AlertCircle, Loader2 } from "lucide-rea
 
 export default function BookUpload({ onUploadComplete }) {
   const [file, setFile] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [publisher, setPublisher] = useState("");
+  const [tradition, setTradition] = useState("Parashara Jyotish");
+  const [publicationYear, setPublicationYear] = useState("");
+  const [description, setDescription] = useState("");
   const [language, setLanguage] = useState("Hindi");
   const [script, setScript] = useState("Devanagari");
 
@@ -68,8 +72,12 @@ export default function BookUpload({ onUploadComplete }) {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("title", title);
+    if (coverFile) formData.append("coverImage", coverFile);
     if (author) formData.append("author", author);
     if (publisher) formData.append("publisher", publisher);
+    if (tradition) formData.append("tradition", tradition);
+    if (publicationYear) formData.append("publicationYear", publicationYear);
+    if (description) formData.append("description", description);
     formData.append("language", language);
     formData.append("script", script);
 
@@ -242,6 +250,59 @@ export default function BookUpload({ onUploadComplete }) {
               className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-hidden focus:ring-2 focus:ring-amber-600/20 focus:border-amber-600"
             />
           </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1">Tradition / Category</label>
+            <select
+              value={tradition}
+              onChange={(e) => setTradition(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-hidden focus:ring-2 focus:ring-amber-600/20 focus:border-amber-600 bg-white"
+            >
+              <option value="Parashara Jyotish">Parashara Jyotish</option>
+              <option value="Jaimini Jyotish">Jaimini Jyotish</option>
+              <option value="Vedanga Jyotisha">Vedanga Jyotisha</option>
+              <option value="Astrology">Astrology (सामान्य ज्योतिष)</option>
+              <option value="Vedas">Vedas (वेद)</option>
+              <option value="Upanishad">Upanishad (उपनिषद्)</option>
+              <option value="Philosophy">Philosophy (दर्शनशास्त्र)</option>
+              <option value="Ayurveda">Ayurveda (आयुर्वेद)</option>
+              <option value="Classics">Classics (अन्य शास्त्रीय ग्रंथ)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1">Publication Year (Optional)</label>
+            <input
+              type="number"
+              value={publicationYear}
+              onChange={(e) => setPublicationYear(e.target.value)}
+              placeholder="e.g. 1985"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-hidden focus:ring-2 focus:ring-amber-600/20 focus:border-amber-600"
+            />
+          </div>
+        </div>
+
+        {/* Cover Image Picker */}
+        <div>
+          <label className="block text-xs font-semibold text-stone-700 mb-1">Book Cover Image (Optional)</label>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => setCoverFile(e.target.files?.[0] || null)}
+            className="w-full text-xs text-stone-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer"
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="block text-xs font-semibold text-stone-700 mb-1">Book Description / Context</label>
+          <textarea
+            rows={2}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter brief summary, scriptural lineage, or manuscript details..."
+            className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-hidden focus:ring-2 focus:ring-amber-600/20 focus:border-amber-600"
+          />
         </div>
 
         <button

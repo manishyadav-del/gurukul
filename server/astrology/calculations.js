@@ -75,7 +75,9 @@ export function computeAscendant(astroTime, latitude, longitude, ayanamsa) {
   const T = (jd - 2451545.0) / 36525.0;
   const epsDeg = 23.439291 - 0.0130042 * T;
   const epsRad = epsDeg * D2R;
-  const latRad = latitude * D2R;
+  // Gracefully clamp extreme polar latitudes to prevent tan() singularity at exact 90°
+  const safeLat = Math.min(89.9999, Math.max(-89.9999, latitude));
+  const latRad = safeLat * D2R;
 
   // Spherical trigonometry Ascendant formula
   const y = Math.cos(ramcRad);
@@ -430,6 +432,80 @@ export function buildHouses(lagnaSignIndex, planets) {
       signification: h.signification,
       karaka: h.karaka,
       planets: residingPlanets,
+    };
+  });
+}
+
+/**
+ * Classical Parashara Graha Drishti (Planetary Aspects)
+ * 
+ * Rules from Brihat Parashara Hora Shastra (BPHS Ch. 26):
+ * - All planets have full 100% aspect on the 7th house from their placement.
+ * - Mars (Mangala) has special full aspects on the 4th and 8th houses (as well as 7th).
+ * - Jupiter (Guru) has special full aspects on the 5th and 9th houses (as well as 7th).
+ * - Saturn (Shani) has special full aspects on the 3rd and 10th houses (as well as 7th).
+ * - Rahu and Ketu cast full trinal aspects on the 5th and 9th houses (as well as 7th).
+ *
+ * @param {Array<Object>} planets - List of enriched planet records with .house
+ * @returns {Array<Object>} Enriched planets containing .aspects metadata
+ */
+export function computePlanetaryAspects(planets) {
+  const ASPECT_OFFSETS = {
+    SUN: [7],
+    MOON: [7],
+    MARS: [4, 7, 8],
+    MERCURY: [7],
+    JUPITER: [5, 7, 9],
+    VENUS: [7],
+    SATURN: [3, 7, 10],
+    RAHU: [5, 7, 9],
+    KETU: [5, 7, 9],
+  };
+
+  return planets.map((p) => {
+    const offsets = ASPECT_OFFSETS[p.planet] || [7];
+    const aspectedHouses = [];
+    const aspectedPlanets = [];
+    const specialAspects = [];
+
+    offsets.forEach((offset) => {
+      const targetHouse = ((p.house - 1 + offset - 1) % 12) + 1;
+      aspectedHouses.push(targetHouse);
+
+      const occupants = planets.filter((other) => other.planet !== p.planet && other.house === targetHouse);
+      occupants.forEach((occ) => {
+        if (!aspectedPlanets.includes(occ.planet)) {
+          aspectedPlanets.push(occ.planet);
+        }
+      });
+
+      if (p.planet === "MARS" && (offset === 4 || offset === 8)) {
+        specialAspects.push(`${offset}th House Special Aspect`);
+      } else if (p.planet === "JUPITER" && (offset === 5 || offset === 9)) {
+        specialAspects.push(`${offset}th House Special Trinal Aspect`);
+      } else if (p.planet === "SATURN" && (offset === 3 || offset === 10)) {
+        specialAspects.push(`${offset}th House Special Aspect`);
+      }
+    });
+
+    // Also identify which planets aspect this planet
+    const aspectedBy = planets
+      .filter((other) => {
+        if (other.planet === p.planet) return false;
+        const otherOffsets = ASPECT_OFFSETS[other.planet] || [7];
+        return otherOffsets.some((off) => ((other.house - 1 + off - 1) % 12) + 1 === p.house);
+      })
+      .map((other) => other.planet);
+
+    return {
+      ...p,
+      aspects: {
+        aspectedHouses,
+        aspectedPlanets,
+        aspectedBy,
+        specialAspects,
+        hasAspectOnLagna: aspectedHouses.includes(1),
+      },
     };
   });
 }

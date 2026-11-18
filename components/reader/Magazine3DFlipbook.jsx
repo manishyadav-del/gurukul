@@ -136,8 +136,8 @@ export default function Magazine3DFlipbook({
         const page = await pdfDoc.getPage(pageNum);
         const baseVp = page.getViewport({ scale: 1.0 });
 
-        // Optimal DPR clamp (1.35x max) for crisp typography with fast rasterization
-        const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1.25, 1.4) : 1.25;
+        // High-DPI clamp (up to 2.0x) for razor-sharp Sanskrit & Devanagari ligatures
+        const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1.25, 2.0) : 1.25;
         const targetH = Math.min(Math.max(dimensions.pageHeight, 550), 920);
         const renderScale = (targetH / baseVp.height) * dpr;
 
@@ -286,6 +286,16 @@ export default function Magazine3DFlipbook({
           }
 
           let html = "";
+          // Front / Back Hardcover Embossed Gilded Border Presentation
+          if (isFrontCover) {
+            html += `<div class="absolute inset-0 pointer-events-none z-15 border-4 border-[#b8860b]/35 rounded-r-lg m-2 shadow-inner"></div>
+            <div class="absolute top-3 right-3 pointer-events-none z-20 px-2 py-0.5 rounded bg-[#13382c]/85 text-[#d4a359] text-[8px] font-mono font-bold tracking-widest uppercase border border-[#d4a359]/30">
+              Facsimile Folio 1
+            </div>`;
+          } else if (isBackCover) {
+            html += `<div class="absolute inset-0 pointer-events-none z-15 border-4 border-[#b8860b]/35 rounded-l-lg m-2 shadow-inner"></div>`;
+          }
+
           // Central spine gutter depth
           if (!isFrontCover) {
             html += `<div class="absolute inset-y-0 w-16 pointer-events-none z-10 ${

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Search,
@@ -33,14 +34,26 @@ const SUGGESTED_QUERIES = [
   "Varahamihira",
 ];
 
-export default function SearchPage() {
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+function SearchPageContent() {
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams?.get("q") || "";
+
+  const [query, setQuery] = useState(urlQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(urlQuery);
   const [languageFilter, setLanguageFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [subjectFilter, setSubjectFilter] = useState("ALL");
   const [ocrFilter, setOcrFilter] = useState("ALL");
   const [page, setPage] = useState(1);
+
+  // Sync URL query if it updates externally
+  useEffect(() => {
+    const qParam = searchParams?.get("q");
+    if (qParam !== null && qParam !== undefined && qParam !== query) {
+      setQuery(qParam);
+      setDebouncedQuery(qParam);
+    }
+  }, [searchParams]);
 
   const [results, setResults] = useState([]);
   const [expandedConcepts, setExpandedConcepts] = useState([]);
@@ -457,5 +470,19 @@ export default function SearchPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-5xl mx-auto px-4 py-16 text-center text-stone-500 text-sm">
+          Loading Search Engine...
+        </div>
+      }
+    >
+      <SearchPageContent />
+    </Suspense>
   );
 }

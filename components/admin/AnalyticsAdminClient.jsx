@@ -35,6 +35,7 @@ export default function AnalyticsAdminClient({ initialData }) {
   };
 
   const metrics = data.metrics || {};
+  const timeline = data.timeline || [];
   const handleExportCSV = () => {
     const rows = [
       ["Metric", "Value", "Window"],
@@ -163,12 +164,28 @@ export default function AnalyticsAdminClient({ initialData }) {
         <p className="text-xs text-stone-500">Daily distribution of user activity and readings over the selected window.</p>
 
         <div className="pt-4 grid grid-cols-7 sm:grid-cols-14 gap-2 items-end h-48 border-b border-stone-100">
-          {timeline.map((point, idx) => (
-            <div key={idx} className="flex flex-col items-center gap-1.5 h-full justify-end">
-              <div className="w-full max-w-[20px] bg-gradient-to-t from-[#13382c] to-[#24634f] rounded-t-md transition-all hover:brightness-125" style={{ height: `${Math.max(15, Math.min(100, (point.reads + point.quizzes + 5) * 6))}%` }} />
-              <span className="text-[9px] text-stone-400 font-mono rotate-45 sm:rotate-0 mt-1 truncate">{point.date}</span>
+          {timeline.length === 0 ? (
+            <div className="col-span-full h-full flex items-center justify-center text-xs text-stone-400">
+              No activity recorded for this period yet.
             </div>
-          ))}
+          ) : (
+            timeline.map((point, idx) => (
+              <div key={idx} className="flex flex-col items-center gap-1.5 h-full justify-end">
+                <div
+                  className="w-full max-w-[20px] bg-gradient-to-t from-[#13382c] to-[#24634f] rounded-t-md transition-all hover:brightness-125"
+                  style={{
+                    height: `${Math.max(
+                      15,
+                      Math.min(100, (((point?.reads || 0) + (point?.quizzes || 0) + 5) * 6))
+                    )}%`,
+                  }}
+                />
+                <span className="text-[9px] text-stone-400 font-mono rotate-45 sm:rotate-0 mt-1 truncate">
+                  {point?.date}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

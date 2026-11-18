@@ -96,6 +96,21 @@ export default async function BookPdfReaderPage({ params }) {
     }
   }
 
+  // Fetch user's saved reading progress to resume reading
+  let initialProgress = null;
+  if (user?.id) {
+    try {
+      initialProgress = await prisma.readingProgress.findUnique({
+        where: {
+          userId_bookId: {
+            userId: user.id,
+            bookId: book.id,
+          },
+        },
+      });
+    } catch (_) {}
+  }
+
   // Authorized same-origin streaming & download endpoints
   const securePdfUrl = `/api/books/${book.id}/pdf`;
   const downloadPdfUrl = `/api/books/${book.id}/pdf?download=true`;
@@ -156,6 +171,7 @@ export default async function BookPdfReaderPage({ params }) {
         chapters={book.chapters || []}
         initialPages={book.pages || []}
         initialPassages={book.passages || []}
+        initialProgress={initialProgress}
         user={user}
       />
     </div>

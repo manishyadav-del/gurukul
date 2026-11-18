@@ -130,6 +130,8 @@ model User {
   practicePreference  UserPracticePreference?
   festivalPreferences UserFestivalPreference[]
   observanceReminders UserObservanceReminder[]
+  numerologyProfiles  NumerologyProfile[]
+  numerologyReports   NumerologyReport[]
 
   @@index([totalXp])
   @@index([isActive])
@@ -679,8 +681,9 @@ model BirthProfile {
   updatedAt     DateTime         @updatedAt
   birthChart    BirthChart?
   user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  conversations AIConversation[]
-  familyMembers FamilyMember[]
+  conversations     AIConversation[]
+  familyMembers     FamilyMember[]
+  numerologyProfile NumerologyProfile?
 
   @@index([userId])
   @@map("birth_profiles")
@@ -1705,6 +1708,59 @@ model UserObservanceReminder {
   @@index([eventDate])
   @@index([status])
   @@map("user_observance_reminders")
+}
+
+model NumerologyProfile {
+  id              String        @id @default(uuid())
+  userId          String?
+  birthProfileId  String?       @unique
+  name            String
+  birthDate       DateTime
+  mulank          Int           // Psychic / Driver Number (1-9)
+  bhagyank        Int           // Destiny / Life Path Number (1-9)
+  namank          Int           // Name Number (1-9)
+  rulerPlanet     String        // Planetary Ruler (Sun, Moon, Mars, etc.)
+  luckyColors     String[]
+  luckyDays       String[]
+  luckyGemstone   String?
+  friendlyNumbers Int[]
+  enemyNumbers    Int[]
+  neutralNumbers  Int[]
+  gridData        Json?         // 3x3 Vedic Grid frequencies and plane scores
+  calculationData Json?         // Full deterministic calculation breakdown
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  birthProfile    BirthProfile? @relation(fields: [birthProfileId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([mulank])
+  @@index([bhagyank])
+  @@map("numerology_profiles")
+}
+
+model NumerologyReport {
+  id              String   @id @default(uuid())
+  userId          String?
+  name            String
+  birthDate       DateTime
+  system          String   @default("CHALDEAN") // "CHALDEAN", "PYTHAGOREAN", "VEDIC"
+  language        String   @default("en")       // "en", "hi"
+  targetDate      DateTime @default(now())      // for personal year/month/day
+  coreNumbers     Json     // { lifePath, expression, soulUrge, personality, birthday, maturity, etc. }
+  reportData      Json     // 10 sections of structured personalized report
+  version         Int      @default(1)
+  engineVersion   String   @default("2.0.0")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([system])
+  @@index([createdAt])
+  @@map("numerology_reports")
 }
 
 

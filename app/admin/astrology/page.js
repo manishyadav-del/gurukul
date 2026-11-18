@@ -16,12 +16,22 @@ export default async function AdminAstrologyPage() {
 
   const todayStr = new Date().toISOString().split("T")[0];
 
-  const [totalReports, todayReports, totalCharts, remedies, kundaliniModules] = await Promise.all([
-    prisma.dailyAstrologyReport.count(),
-    prisma.dailyAstrologyReport.count({ where: { reportDate: todayStr } }),
-    prisma.birthChart.count(),
-    prisma.dailyRemedy.findMany({ orderBy: { createdAt: "asc" } }),
-    prisma.kundaliniModule.findMany({ orderBy: { order: "asc" } }),
+  const [
+    totalReports,
+    todayReports,
+    totalCharts,
+    remedies,
+    kundaliniModules,
+    totalNumerologyProfiles,
+    totalNumerologyReports,
+  ] = await Promise.all([
+    prisma.dailyAstrologyReport.count().catch(() => 0),
+    prisma.dailyAstrologyReport.count({ where: { reportDate: todayStr } }).catch(() => 0),
+    prisma.birthChart.count().catch(() => 0),
+    prisma.dailyRemedy.findMany({ orderBy: { createdAt: "asc" } }).catch(() => []),
+    prisma.kundaliniModule.findMany({ orderBy: { order: "asc" } }).catch(() => []),
+    prisma.numerologyProfile.count().catch(() => 0),
+    prisma.numerologyReport.count().catch(() => 0),
   ]);
 
   const initialData = {
@@ -32,6 +42,8 @@ export default async function AdminAstrologyPage() {
       totalBirthCharts: totalCharts,
       totalRemedies: remedies.length,
       totalKundaliniModules: kundaliniModules.length,
+      totalNumerologyProfiles,
+      totalNumerologyReports,
     },
     remedies,
     kundaliniModules,

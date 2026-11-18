@@ -40,6 +40,7 @@ import {
   Globe,
   X,
   Network,
+  Award,
 } from "lucide-react";
 import NorthIndianChart from "./NorthIndianChart";
 import HoroscopeKnowledgeExplorer from "./HoroscopeKnowledgeExplorer";
@@ -48,6 +49,7 @@ import VedicCalendarStudio from "./VedicCalendarStudio";
 import WorldLocationModal from "./WorldLocationModal";
 import FamilyAstrologyCircle from "./FamilyAstrologyCircle";
 import PanchangKnowledgeModal from "./PanchangKnowledgeModal";
+import VedicNumerologyStudio from "./VedicNumerologyStudio";
 import { NAKSHATRA_MUHURTA } from "./muhurtaConstants";
 import { RASHI_NAMES_HI } from "./kundliExplanations";
 import {
@@ -294,6 +296,7 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
       { id: "kundli", label: isHi ? "कुंडली व गोचर" : "Kundli & Transit", icon: Layers },
       { id: "remedies", label: isHi ? "वैदिक उपाय व पूजा" : "Vedic Remedies & Puja", icon: Heart },
       { id: "kundalini", label: isHi ? "कुंडलिनी व चक्र" : "Kundalini & Chakras", icon: ShieldCheck },
+      { id: "numerology", label: isHi ? "वैदिक अंक ज्योतिष" : "Vedic Numerology", icon: Award },
       { id: "explorer", label: isHi ? "ज्ञान अन्वेषक" : "Horoscope Knowledge Explorer", icon: Network },
     ],
     [isHi]
@@ -1207,42 +1210,73 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
                           {/* Abhijit Muhurta */}
-                          <span
-                            onClick={() =>
-                              setKnowledgeModalState({
-                                isOpen: true,
-                                elementKey: "muhurta",
-                                data: {
-                                  name: isHi ? "अभिजित मुहूर्त (अति शुभ)" : "Abhijit Muhurta (Most Auspicious)",
-                                  sub: "11:45 AM – 12:35 PM (Around Solar Midday)",
-                                  status: "Auspicious ✓",
-                                },
-                              })
-                            }
-                            className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-900 border border-emerald-300 font-semibold cursor-pointer hover:bg-emerald-200 transition text-[11px] flex items-center gap-1"
-                            title="Click for Abhijit Muhurta details"
-                          >
-                            <span>🟢 {isHi ? "अभिजित: 11:45 – 12:35" : "Abhijit: 11:45 – 12:35"}</span>
-                          </span>
+                          {panchangData?.abhijitMuhurta && (
+                            <span
+                              onClick={() =>
+                                setKnowledgeModalState({
+                                  isOpen: true,
+                                  elementKey: "muhurta",
+                                  data: {
+                                    name: isHi ? "अभिजित मुहूर्त (अति शुभ)" : "Abhijit Muhurta (Most Auspicious)",
+                                    sub: `${panchangData.abhijitMuhurta.startLocal} – ${panchangData.abhijitMuhurta.endLocal} (${panchangData.abhijitMuhurta.durationMinutes} min)`,
+                                    status: panchangData.abhijitMuhurta.isAuspicious ? "Auspicious ✓" : "Restricted on Wed",
+                                  },
+                                })
+                              }
+                              className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-900 border border-emerald-300 font-semibold cursor-pointer hover:bg-emerald-200 transition text-[11px] flex items-center gap-1"
+                              title="Click for Abhijit Muhurta details"
+                            >
+                              <span>
+                                🟢 {isHi ? "अभिजित" : "Abhijit"}: {panchangData.abhijitMuhurta.startLocal} – {panchangData.abhijitMuhurta.endLocal}
+                              </span>
+                            </span>
+                          )}
 
                           {/* Amrit Kaal */}
-                          <span
-                            onClick={() =>
-                              setKnowledgeModalState({
-                                isOpen: true,
-                                elementKey: "muhurta",
-                                data: {
-                                  name: isHi ? "अमृत काल (अमृत योग)" : "Amrit Kaal (Nectar Window)",
-                                  sub: "Classically best for ceremonies, mantras, and long-term endeavors.",
-                                  status: "Good",
-                                },
-                              })
-                            }
-                            className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 font-semibold cursor-pointer hover:bg-amber-200 transition text-[11px]"
-                            title="Click for Amrit Kaal details"
-                          >
-                            <span>🟡 {isHi ? "अमृत काल" : "Amrit Kaal"}</span>
-                          </span>
+                          {panchangData?.amritKaal && (
+                            <span
+                              onClick={() =>
+                                setKnowledgeModalState({
+                                  isOpen: true,
+                                  elementKey: "muhurta",
+                                  data: {
+                                    name: isHi ? "अमृत काल (अमृत योग)" : "Amrit Kaal (Nectar Window)",
+                                    sub: `${panchangData.amritKaal.startLocal} – ${panchangData.amritKaal.endLocal} (${panchangData.amritKaal.durationMinutes} min)`,
+                                    status: "Good",
+                                  },
+                                })
+                              }
+                              className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 font-semibold cursor-pointer hover:bg-amber-200 transition text-[11px]"
+                              title="Click for Amrit Kaal details"
+                            >
+                              <span>
+                                🟡 {isHi ? "अमृत काल" : "Amrit Kaal"}: {panchangData.amritKaal.startLocal} – {panchangData.amritKaal.endLocal}
+                              </span>
+                            </span>
+                          )}
+
+                          {/* Brahma Muhurta */}
+                          {panchangData?.brahmaMuhurta && (
+                            <span
+                              onClick={() =>
+                                setKnowledgeModalState({
+                                  isOpen: true,
+                                  elementKey: "muhurta",
+                                  data: {
+                                    name: isHi ? "ब्रह्म मुहूर्त (साधना काल)" : "Brahma Muhurta (Pre-dawn Window)",
+                                    sub: `${panchangData.brahmaMuhurta.startLocal} – ${panchangData.brahmaMuhurta.endLocal} (${panchangData.brahmaMuhurta.durationMinutes} min)`,
+                                    status: "Spiritual",
+                                  },
+                                })
+                              }
+                              className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-200 font-semibold cursor-pointer hover:bg-indigo-100 transition text-[11px]"
+                              title="Click for Brahma Muhurta details"
+                            >
+                              <span>
+                                🔵 {isHi ? "ब्रह्म मुहूर्त" : "Brahma Muhurta"}: {panchangData.brahmaMuhurta.startLocal} – {panchangData.brahmaMuhurta.endLocal}
+                              </span>
+                            </span>
+                          )}
 
                           {/* Rahu Kaal Warning */}
                           <span
@@ -2764,6 +2798,15 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
                         </div>
                       )}
                     </div>
+                  </div>
+                )}
+
+                {/* ------------------------------------------------------------- */}
+                {/* TAB: VEDIC NUMEROLOGY STUDIO                                 */}
+                {/* ------------------------------------------------------------- */}
+                {selectedTab === "numerology" && (
+                  <div className="space-y-6">
+                    <VedicNumerologyStudio />
                   </div>
                 )}
 

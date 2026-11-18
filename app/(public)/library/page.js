@@ -43,6 +43,8 @@ export default async function LibraryPage() {
         script: true,
         author: true,
         publisher: true,
+        tradition: true,
+        publicationYear: true,
         coverUrl: true,
         coverImageUrl: true,
         pageCount: true,

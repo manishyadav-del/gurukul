@@ -18,12 +18,16 @@ import {
   Sun,
   Moon,
   Scroll,
+  LayoutGrid,
+  Columns,
+  PenLine,
 } from "lucide-react";
 
 /**
  * Compact Floating Glassmorphic Reader Toolbar.
  * Provides intuitive, responsive controls for navigation, zoom,
- * view modes, reading themes, and on-demand AI explanations.
+ * view modes (Manuscript, Side-by-Side, Extracted Text), reading themes,
+ * page thumbnails, notes, and on-demand AI explanations.
  */
 export default function MagazineToolbar({
   currentPage,
@@ -35,13 +39,19 @@ export default function MagazineToolbar({
   onZoomIn,
   onZoomOut,
   onZoomFit,
-  viewMode = "MAGAZINE", // "MAGAZINE" | "SINGLE" | "PDF_SCROLL"
+  onZoomFitWidth,
+  viewMode = "MANUSCRIPT", // "MANUSCRIPT" | "SIDE_BY_SIDE" | "EXTRACTED" | "SINGLE"
   onChangeViewMode,
   theme = "classic", // "classic" | "modern" | "night"
   onChangeTheme,
   isFullscreen = false,
   onToggleFullscreen,
   onToggleChapters,
+  onToggleThumbnails,
+  isThumbnailsOpen = false,
+  onToggleNotes,
+  isNotesOpen = false,
+  hasNotes = false,
   onToggleExplain,
   isExplainOpen = false,
   isBookmarked = false,
@@ -129,7 +139,7 @@ export default function MagazineToolbar({
         <button
           onClick={onZoomOut}
           aria-label="Zoom Out"
-          className="min-w-[36px] min-h-[36px] rounded-lg hover:bg-white/10 text-stone-200 hover:text-white transition cursor-pointer flex items-center justify-center"
+          className="min-w-[34px] min-h-[34px] rounded-lg hover:bg-white/10 text-stone-200 hover:text-white transition cursor-pointer flex items-center justify-center"
           title="Zoom Out (-)"
         >
           <ZoomOut className="w-4 h-4" />
@@ -138,7 +148,7 @@ export default function MagazineToolbar({
         <button
           onClick={onZoomFit}
           className="px-2 py-1 text-xs font-mono text-amber-200 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer font-bold"
-          title="Fit to Screen"
+          title="Fit to Page (Reset Zoom)"
           aria-label={`Zoom level ${Math.round(scale * 100)} percent. Click to reset zoom.`}
         >
           {Math.round(scale * 100)}%
@@ -147,52 +157,75 @@ export default function MagazineToolbar({
         <button
           onClick={onZoomIn}
           aria-label="Zoom In"
-          className="min-w-[36px] min-h-[36px] rounded-lg hover:bg-white/10 text-stone-200 hover:text-white transition cursor-pointer flex items-center justify-center"
+          className="min-w-[34px] min-h-[34px] rounded-lg hover:bg-white/10 text-stone-200 hover:text-white transition cursor-pointer flex items-center justify-center"
           title="Zoom In (+)"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
+
+        {onZoomFitWidth && (
+          <button
+            onClick={onZoomFitWidth}
+            className="px-1.5 py-1 text-[10px] font-mono text-stone-300 hover:text-white hover:bg-white/10 rounded transition cursor-pointer hidden lg:inline"
+            title="Fit to Width"
+          >
+            Width
+          </button>
+        )}
       </div>
 
       <div className="h-5 w-px bg-white/20 shrink-0 hidden sm:block" />
 
-      {/* 3. Display Mode Selector (Magazine / Single) */}
-      <div className="hidden sm:flex items-center gap-1 bg-black/40 p-0.5 rounded-xl border border-white/15 text-xs">
+      {/* 3. Canonical Reader Mode Selector (Manuscript, Side-by-Side, Extracted Text) */}
+      <div className="flex items-center gap-1 bg-black/40 p-0.5 rounded-xl border border-white/15 text-xs">
         <button
-          onClick={() => onChangeViewMode("MAGAZINE")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-serif transition cursor-pointer flex items-center gap-1.5 ${
-            viewMode === "MAGAZINE"
+          onClick={() => onChangeViewMode("MANUSCRIPT")}
+          className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-serif transition cursor-pointer flex items-center gap-1.5 ${
+            viewMode === "MANUSCRIPT" || viewMode === "MAGAZINE"
               ? "bg-[#d4a359] text-stone-950 font-bold shadow-xs"
               : "text-stone-300 hover:text-white"
           }`}
-          title="3D Two-Page Magazine Flipbook"
+          title="Original Manuscript (3D Magazine Spread)"
         >
           <BookOpen className="w-3.5 h-3.5" />
-          <span className="hidden lg:inline">Magazine</span>
+          <span className="hidden md:inline">Manuscript</span>
         </button>
 
         <button
-          onClick={() => onChangeViewMode("SINGLE")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-serif transition cursor-pointer flex items-center gap-1.5 ${
-            viewMode === "SINGLE"
+          onClick={() => onChangeViewMode("SIDE_BY_SIDE")}
+          className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-serif transition cursor-pointer flex items-center gap-1.5 ${
+            viewMode === "SIDE_BY_SIDE"
               ? "bg-[#d4a359] text-stone-950 font-bold shadow-xs"
               : "text-stone-300 hover:text-white"
           }`}
-          title="Single Page View"
+          title="Side-by-Side (Original PDF + Verified Scholarly Text)"
         >
-          <FileText className="w-3.5 h-3.5" />
-          <span className="hidden lg:inline">Single</span>
+          <Columns className="w-3.5 h-3.5" />
+          <span className="hidden md:inline">Side-by-Side</span>
+        </button>
+
+        <button
+          onClick={() => onChangeViewMode("EXTRACTED")}
+          className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-serif transition cursor-pointer flex items-center gap-1.5 ${
+            viewMode === "EXTRACTED"
+              ? "bg-[#d4a359] text-stone-950 font-bold shadow-xs"
+              : "text-stone-300 hover:text-white"
+          }`}
+          title="Extracted Scholarly Sanskrit & Hindi Text"
+        >
+          <Scroll className="w-3.5 h-3.5" />
+          <span className="hidden md:inline">Text</span>
         </button>
       </div>
 
       {/* 4. Reading Theme Selector */}
       {onChangeTheme && (
-        <div className="relative hidden lg:block shrink-0">
+        <div className="relative hidden xl:block shrink-0">
           <button
             onClick={() => setShowThemeMenu((v) => !v)}
             aria-label="Change reading theme"
-            className="min-w-[40px] min-h-[40px] rounded-xl hover:bg-white/10 text-stone-200 hover:text-white transition cursor-pointer flex items-center justify-center gap-1"
-            title="Reading Theme (Classic / Modern / Night)"
+            className="min-w-[36px] min-h-[36px] rounded-xl hover:bg-white/10 text-stone-200 hover:text-white transition cursor-pointer flex items-center justify-center gap-1"
+            title="Reading Theme (Classic Parchment / Modern White / Night Obsidian)"
           >
             {theme === "night" ? (
               <Moon className="w-4 h-4 text-blue-300" />
@@ -254,16 +287,42 @@ export default function MagazineToolbar({
 
       <div className="h-5 w-px bg-white/20 hidden sm:block shrink-0" />
 
-      {/* 5. Table of Contents & Bookmark Actions */}
-      <div className="flex items-center gap-1 shrink-0">
+      {/* 5. Utility Drawers: Thumbnails, TOC, Notes, Bookmark, Fullscreen */}
+      <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+        {onToggleThumbnails && (
+          <button
+            onClick={onToggleThumbnails}
+            aria-label="Page Thumbnails"
+            className={`min-w-[36px] min-h-[36px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl hover:bg-white/10 transition cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#d4a359] ${
+              isThumbnailsOpen ? "text-[#d4a359] bg-white/10" : "text-stone-200 hover:text-white"
+            }`}
+            title="Page Thumbnails Filmstrip (T)"
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+        )}
+
         {onToggleChapters && (
           <button
             onClick={onToggleChapters}
             aria-label="Table of Contents"
-            className="min-w-[40px] min-h-[40px] sm:min-w-[44px] sm:min-h-[44px] rounded-xl hover:bg-white/10 text-stone-200 hover:text-white transition cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#d4a359]"
-            title="Table of Contents (Chapters)"
+            className="min-w-[36px] min-h-[36px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl hover:bg-white/10 text-stone-200 hover:text-white transition cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#d4a359]"
+            title="Table of Contents (Chapters) (C)"
           >
             <Layers className="w-4 h-4" />
+          </button>
+        )}
+
+        {onToggleNotes && (
+          <button
+            onClick={onToggleNotes}
+            aria-label="Personal Notes"
+            className={`min-w-[36px] min-h-[36px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl hover:bg-white/10 transition cursor-pointer hidden md:flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#d4a359] ${
+              isNotesOpen ? "text-[#d4a359] bg-white/10" : hasNotes ? "text-amber-300" : "text-stone-200 hover:text-white"
+            }`}
+            title="Personal Page Notes & Annotations"
+          >
+            <PenLine className="w-4 h-4" />
           </button>
         )}
 
@@ -271,10 +330,10 @@ export default function MagazineToolbar({
           <button
             onClick={onToggleBookmark}
             aria-label={isBookmarked ? "Remove Bookmark" : "Bookmark this Page"}
-            className={`min-w-[40px] min-h-[40px] sm:min-w-[44px] sm:min-h-[44px] rounded-xl hover:bg-white/10 transition cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#d4a359] ${
+            className={`min-w-[36px] min-h-[36px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl hover:bg-white/10 transition cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#d4a359] ${
               isBookmarked ? "text-[#d4a359]" : "text-stone-200 hover:text-white"
             }`}
-            title={isBookmarked ? "Remove Bookmark" : "Bookmark this Page"}
+            title={isBookmarked ? "Remove Bookmark" : "Bookmark this Page (B)"}
           >
             <Bookmark
               className="w-4 h-4"
@@ -287,8 +346,8 @@ export default function MagazineToolbar({
           <button
             onClick={onToggleFullscreen}
             aria-label={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-            className="min-w-[40px] min-h-[40px] sm:min-w-[44px] sm:min-h-[44px] rounded-xl hover:bg-white/10 text-stone-200 hover:text-white transition cursor-pointer hidden sm:flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#d4a359]"
-            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Reading"}
+            className="min-w-[36px] min-h-[36px] sm:min-w-[40px] sm:min-h-[40px] rounded-xl hover:bg-white/10 text-stone-200 hover:text-white transition cursor-pointer hidden sm:flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#d4a359]"
+            title={isFullscreen ? "Exit Fullscreen (F)" : "Fullscreen Reading (F)"}
           >
             {isFullscreen ? (
               <Minimize2 className="w-4 h-4" />

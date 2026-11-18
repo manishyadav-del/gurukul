@@ -108,8 +108,12 @@ export async function POST(request) {
       const edition = formData.get("edition") || null;
       const isbn = formData.get("isbn") || null;
       const description = formData.get("description") || null;
+      const tradition = formData.get("tradition") || formData.get("category") || null;
+      const publicationYear = formData.get("publicationYear") ? parseInt(formData.get("publicationYear"), 10) : null;
       const language = formData.get("language") || "Hindi";
       const script = formData.get("script") || (language === "English" ? "Latin" : "Devanagari");
+      let coverImageUrl = formData.get("coverImageUrl") || null;
+      const coverFile = formData.get("coverImage") || formData.get("cover");
 
       if (!file || typeof file === "string") {
         return NextResponse.json({ error: "PDF file is required in 'file' field" }, { status: 400 });
@@ -180,6 +184,8 @@ export async function POST(request) {
           edition,
           isbn,
           description,
+          tradition,
+          publicationYear,
           language,
           script,
           originalFileName,
@@ -193,12 +199,28 @@ export async function POST(request) {
           isPrivate: true,
         });
 
+        // Handle cover image upload if present
+        let resolvedCoverUrl = coverImageUrl;
+        if (coverFile && typeof coverFile !== "string" && coverFile.size > 0) {
+          const coverExt = path.extname(coverFile.name || "cover.jpg").toLowerCase();
+          if ([".jpg", ".jpeg", ".png", ".webp"].includes(coverExt)) {
+            const coverBuffer = Buffer.from(await coverFile.arrayBuffer());
+            const coverPath = `books/${newBook.id}/cover${coverExt}`;
+            await uploadFile(coverPath, coverBuffer, {
+              contentType: coverFile.type || "image/jpeg",
+              isPrivate: false,
+            });
+            resolvedCoverUrl = `/uploads/${coverPath}`;
+          }
+        }
+
         // Update book with storage relative path
         await prisma.book.update({
           where: { id: newBook.id },
           data: {
             originalFileUrl: originalStoragePath,
             sourcePdf: originalStoragePath,
+            ...(resolvedCoverUrl && { coverImageUrl: resolvedCoverUrl, coverUrl: resolvedCoverUrl }),
           },
         });
       } catch (uploadErr) {

@@ -418,6 +418,127 @@ export function computeChoghadiya(sunrise, sunset, weekdayIndex, tzOffsetHours, 
 }
 
 /**
+ * Classical Starting Ghatika for Amrit Kaal in each of the 27 Nakshatras (Brihat Samhita & Muhurta Chintamani)
+ * (Index 0 = Ashwini, ..., Index 26 = Revati)
+ */
+export const NAKSHATRA_AMRIT_GHATIKAS = [
+  42, 48, 54, 52, 38, 35, 54, 44, 56, 54,
+  44, 48, 45, 45, 44, 44, 42, 44, 46, 44,
+  45, 45, 44, 48, 44, 42, 54,
+];
+
+/**
+ * Computes location-specific Abhijit Muhurta (8th daytime Muhurta centered around solar midday).
+ *
+ * @param {Date} sunrise
+ * @param {Date} sunset
+ * @param {number} weekdayIndex - 0=Sun, ..., 3=Wed, 6=Sat
+ * @param {number} tzOffsetHours
+ * @returns {Object|null}
+ */
+export function computeAbhijitMuhurta(sunrise, sunset, weekdayIndex, tzOffsetHours) {
+  if (!sunrise || !sunset) return null;
+  const dayDurationMs = sunset.getTime() - sunrise.getTime();
+  if (dayDurationMs <= 0) return null;
+
+  const muhurtaMs = dayDurationMs / 15; // 15 Muhurtas of daytime
+  const start = new Date(sunrise.getTime() + 7 * muhurtaMs);
+  const end = new Date(sunrise.getTime() + 8 * muhurtaMs);
+
+  const isAuspicious = weekdayIndex !== 3; // On Wednesday, Abhijit has Budha-Abhijit restriction
+
+  return {
+    start,
+    end,
+    startLocal: formatTimeInTz(start, tzOffsetHours),
+    endLocal: formatTimeInTz(end, tzOffsetHours),
+    startUtc: start.toISOString(),
+    endUtc: end.toISOString(),
+    durationMinutes: Math.round(muhurtaMs / 60000),
+    isAuspicious,
+    status: isAuspicious ? "AUSPICIOUS" : "RESTRICTED_ON_WEDNESDAY",
+    nameEn: "Abhijit Muhurta",
+    nameHi: "अभिजित मुहूर्त",
+    description: isAuspicious
+      ? "Most auspicious daytime Muhurta; neutralizes all negative planetary afflictions for major ventures."
+      : "On Wednesdays, Abhijit Muhurta is classically restricted due to planetary clash with Mercury.",
+    descriptionHi: isAuspicious
+      ? "सर्वोत्तम विजय मुहूर्त — सभी दोषों का शमन कर नवीन कार्यों के लिए परम कल्याणकारी।"
+      : "बुधवार को अभिजित मुहूर्त का परिहार माना जाता है (बुध-अभिजित दोष)।",
+  };
+}
+
+/**
+ * Computes location-specific Brahma Muhurta (2 Muhurtas before sunrise, approx 96-48 min before dawn).
+ *
+ * @param {Date} sunrise
+ * @param {Date} sunset
+ * @param {number} tzOffsetHours
+ * @returns {Object|null}
+ */
+export function computeBrahmaMuhurta(sunrise, sunset, tzOffsetHours) {
+  if (!sunrise) return null;
+
+  const start = new Date(sunrise.getTime() - 96 * 60 * 1000);
+  const end = new Date(sunrise.getTime() - 48 * 60 * 1000);
+
+  return {
+    start,
+    end,
+    startLocal: formatTimeInTz(start, tzOffsetHours),
+    endLocal: formatTimeInTz(end, tzOffsetHours),
+    startUtc: start.toISOString(),
+    endUtc: end.toISOString(),
+    durationMinutes: 48,
+    nameEn: "Brahma Muhurta",
+    nameHi: "ब्रह्म मुहूर्त",
+    description: "Sacred pre-dawn window for meditation, Pranayama, Vedic chanting, and intellectual study.",
+    descriptionHi: "सूर्योदय से पूर्व का परम पावन काल — ध्यान, प्राणायाम, मंत्र जप व स्वाध्याय हेतु सर्वश्रेष्ठ।",
+  };
+}
+
+/**
+ * Computes Nakshatra-based Amrit Kaal (Amrit Ghati) for the day.
+ *
+ * @param {Object} nakshatraInfo - Output from getNakshatraAndPada
+ * @param {Date} sunrise
+ * @param {Date} sunset
+ * @param {number} tzOffsetHours
+ * @returns {Object|null}
+ */
+export function computeAmritKaal(nakshatraInfo, sunrise, sunset, tzOffsetHours) {
+  if (!sunrise || !sunset || !nakshatraInfo?.nakshatra) return null;
+
+  const nakshatraIndex = (nakshatraInfo.nakshatra.id - 1) % 27;
+  const startGhatika = NAKSHATRA_AMRIT_GHATIKAS[nakshatraIndex] || 42;
+
+  const ghatikaMs = 24 * 60 * 1000;
+  const amritDurationMs = 4 * ghatikaMs; // 96 minutes
+
+  const nakshatraFraction = nakshatraInfo.fractionElapsed || 0.5;
+  const dayCycleMs = 24 * 3600 * 1000;
+  const amritStartOffsetMs = ((startGhatika * ghatikaMs) + (nakshatraFraction * 6 * 3600 * 1000)) % dayCycleMs;
+  const start = new Date(sunrise.getTime() + amritStartOffsetMs);
+  const end = new Date(start.getTime() + amritDurationMs);
+
+  return {
+    start,
+    end,
+    startLocal: formatTimeInTz(start, tzOffsetHours),
+    endLocal: formatTimeInTz(end, tzOffsetHours),
+    startUtc: start.toISOString(),
+    endUtc: end.toISOString(),
+    durationMinutes: 96,
+    nakshatraName: nakshatraInfo.nakshatra.name,
+    startGhatika,
+    nameEn: "Amrit Kaal",
+    nameHi: "अमृत काल",
+    description: "Sacred nectar timing window derived from the ruling Nakshatra; highly propitious for ceremonies, sanctifications, and starting auspicious deeds.",
+    descriptionHi: "नक्षत्र-आधारित अमृत काल — मांगलिक अनुष्ठान, पूजा, व नवीन कार्यों हेतु अमृततुल्य फलदायी मुहूर्त।",
+  };
+}
+
+/**
  * Computes Lucky Metrics for the day based on Weekday (Vara) and Moon Sign (Chandra Rashi).
  * @param {Object} vara
  * @param {Object} moonSign
@@ -561,7 +682,12 @@ export function computePanchang({ date, latitude, longitude, tzOffset, timezone 
   // 5. Day & Night Choghadiya intervals
   const choghadiya = computeChoghadiya(sunrise, sunset, vara.dayIndex, tzOffset);
 
-  // 6. Daily Lucky Metrics
+  // 6. Auspicious Timing Windows (Abhijit, Brahma Muhurta, Amrit Kaal)
+  const abhijitMuhurta = computeAbhijitMuhurta(sunrise, sunset, vara.dayIndex, tzOffset);
+  const brahmaMuhurta = computeBrahmaMuhurta(sunrise, sunset, tzOffset);
+  const amritKaal = computeAmritKaal(nakshatra, sunrise, sunset, tzOffset);
+
+  // 7. Daily Lucky Metrics
   const luckyMetrics = computeLuckyMetrics(vara, moonSign);
 
   return {
@@ -627,5 +753,10 @@ export function computePanchang({ date, latitude, longitude, tzOffset, timezone 
     // Choghadiya & Lucky Metrics
     choghadiya,
     luckyMetrics,
+
+    // Auspicious Timing Windows
+    abhijitMuhurta,
+    brahmaMuhurta,
+    amritKaal,
   };
 }

@@ -44,7 +44,8 @@ import { ShlokaDivider, OmSeal } from "./VedicOrnament.jsx";
  * Determines a semantic category for a classical text based on title & description.
  */
 function inferBookCategory(book) {
-  const text = `${book.title || ""} ${book.description || ""} ${book.script || ""}`.toLowerCase();
+  if (book?.tradition) return book.tradition;
+  const text = `${book?.title || ""} ${book?.description || ""} ${book?.script || ""}`.toLowerCase();
 
   if (
     text.includes("jyotish") ||

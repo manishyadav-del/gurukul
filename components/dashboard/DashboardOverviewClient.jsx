@@ -13,6 +13,8 @@ import {
   Compass,
   BookOpen,
   Award,
+  Hash,
+  TrendingUp,
 } from "lucide-react";
 import UserProfileModal from "./UserProfileModal";
 
@@ -21,6 +23,8 @@ export default function DashboardOverviewClient({
   familyCount,
   pendingInvitesCount,
   kundliCount,
+  numerologyCount = 0,
+  readingCount = 0,
 }) {
   const [user, setUser] = useState(initialUser);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -67,19 +71,19 @@ export default function DashboardOverviewClient({
           {/* Edit Profile Action */}
           <button
             onClick={() => setProfileModalOpen(true)}
-            className="px-4 py-2 rounded-xl border border-stone-300 hover:bg-stone-50 text-stone-700 text-xs font-semibold flex items-center gap-2 transition cursor-pointer self-start md:self-auto"
+            className="px-4 py-2 rounded-xl border border-stone-300 hover:bg-stone-50 text-stone-700 text-xs font-semibold flex items-center gap-2 transition cursor-pointer self-start md:self-auto min-h-[44px]"
           >
             <Edit className="w-3.5 h-3.5 text-[#d4a359]" />
             <span>Edit Profile</span>
           </button>
         </div>
 
-        {/* Quick Family & Astrology Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Real User Statistics Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Family Circle Card */}
           <Link
             href="/dashboard/family"
-            className="p-4 rounded-2xl bg-[#fdfbf7] border border-stone-200 hover:border-[#d4a359] hover:bg-[#faf6ec] transition group flex items-center justify-between"
+            className="p-4 rounded-2xl bg-[#fdfbf7] border border-stone-200 hover:border-[#d4a359] hover:bg-[#faf6ec] transition group flex items-center justify-between min-h-[44px]"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#13382c]/10 text-[#13382c] flex items-center justify-center">
@@ -95,29 +99,10 @@ export default function DashboardOverviewClient({
             <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-[#13382c] group-hover:translate-x-0.5 transition" />
           </Link>
 
-          {/* Pending Invitations Card */}
-          <Link
-            href="/dashboard/family"
-            className="p-4 rounded-2xl bg-[#fdfbf7] border border-stone-200 hover:border-amber-400 hover:bg-[#faf6ec] transition group flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
-                <Mail className="w-5 h-5 text-amber-700" />
-              </div>
-              <div>
-                <span className="text-lg font-bold text-stone-900 block leading-tight">
-                  {pendingInvitesCount} Pending
-                </span>
-                <span className="text-[11px] text-stone-500">Email Invitations</span>
-              </div>
-            </div>
-            <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-amber-800 group-hover:translate-x-0.5 transition" />
-          </Link>
-
           {/* Saved Kundlis Card */}
           <Link
-            href="/astrology?tab=kundli"
-            className="p-4 rounded-2xl bg-[#fdfbf7] border border-stone-200 hover:border-[#d4a359] hover:bg-[#faf6ec] transition group flex items-center justify-between"
+            href="/astrology/my-dashboard"
+            className="p-4 rounded-2xl bg-[#fdfbf7] border border-stone-200 hover:border-[#d4a359] hover:bg-[#faf6ec] transition group flex items-center justify-between min-h-[44px]"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center">
@@ -127,10 +112,48 @@ export default function DashboardOverviewClient({
                 <span className="text-lg font-bold text-stone-900 block leading-tight">
                   {kundliCount} Saved
                 </span>
-                <span className="text-[11px] text-stone-500">Vedic Kundlis</span>
+                <span className="text-[11px] text-stone-500">Vedic Birth Charts</span>
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-purple-800 group-hover:translate-x-0.5 transition" />
+          </Link>
+
+          {/* Numerology Reports Card */}
+          <Link
+            href="/astrology/numerology"
+            className="p-4 rounded-2xl bg-[#fdfbf7] border border-stone-200 hover:border-[#d4a359] hover:bg-[#faf6ec] transition group flex items-center justify-between min-h-[44px]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+                <Hash className="w-5 h-5 text-amber-700" />
+              </div>
+              <div>
+                <span className="text-lg font-bold text-stone-900 block leading-tight">
+                  {numerologyCount} Report{numerologyCount === 1 ? "" : "s"}
+                </span>
+                <span className="text-[11px] text-stone-500">Numerology Studio</span>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-amber-800 group-hover:translate-x-0.5 transition" />
+          </Link>
+
+          {/* Reading Progress Card */}
+          <Link
+            href="/dashboard/progress"
+            className="p-4 rounded-2xl bg-[#fdfbf7] border border-stone-200 hover:border-[#d4a359] hover:bg-[#faf6ec] transition group flex items-center justify-between min-h-[44px]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-emerald-700" />
+              </div>
+              <div>
+                <span className="text-lg font-bold text-stone-900 block leading-tight">
+                  {readingCount} Book{readingCount === 1 ? "" : "s"}
+                </span>
+                <span className="text-[11px] text-stone-500">Reading Progress</span>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-emerald-800 group-hover:translate-x-0.5 transition" />
           </Link>
         </div>
 
@@ -142,31 +165,31 @@ export default function DashboardOverviewClient({
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
             <Link
               href="/dashboard/family"
-              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/60 hover:bg-stone-100 hover:border-[#d4a359] text-stone-800 font-semibold transition text-center flex flex-col items-center justify-center gap-1.5"
+              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/60 hover:bg-stone-100 hover:border-[#d4a359] text-stone-800 font-semibold transition text-center flex flex-col items-center justify-center gap-1.5 min-h-[44px]"
             >
               <UserPlus className="w-4 h-4 text-[#13382c]" />
               <span>Add Family</span>
             </Link>
 
             <Link
-              href="/dashboard/family"
-              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/60 hover:bg-stone-100 hover:border-[#d4a359] text-stone-800 font-semibold transition text-center flex flex-col items-center justify-center gap-1.5"
+              href="/astrology/my-dashboard"
+              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/60 hover:bg-stone-100 hover:border-[#d4a359] text-stone-800 font-semibold transition text-center flex flex-col items-center justify-center gap-1.5 min-h-[44px]"
             >
-              <Mail className="w-4 h-4 text-amber-700" />
-              <span>Invite Member</span>
+              <Compass className="w-4 h-4 text-purple-700" />
+              <span>My Astrolab</span>
             </Link>
 
             <Link
-              href="/ai/chat"
-              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/60 hover:bg-stone-100 hover:border-[#d4a359] text-stone-800 font-semibold transition text-center flex flex-col items-center justify-center gap-1.5"
+              href="/astrology/numerology"
+              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/60 hover:bg-stone-100 hover:border-[#d4a359] text-stone-800 font-semibold transition text-center flex flex-col items-center justify-center gap-1.5 min-h-[44px]"
             >
-              <Sparkles className="w-4 h-4 text-[#d4a359]" />
-              <span>Astro AI</span>
+              <Hash className="w-4 h-4 text-amber-700" />
+              <span>Numerology</span>
             </Link>
 
             <Link
               href="/library"
-              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/60 hover:bg-stone-100 hover:border-[#d4a359] text-stone-800 font-semibold transition text-center flex flex-col items-center justify-center gap-1.5"
+              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/60 hover:bg-stone-100 hover:border-[#d4a359] text-stone-800 font-semibold transition text-center flex flex-col items-center justify-center gap-1.5 min-h-[44px]"
             >
               <BookOpen className="w-4 h-4 text-blue-700" />
               <span>Library</span>
@@ -174,18 +197,18 @@ export default function DashboardOverviewClient({
 
             <Link
               href="/dashboard/progress"
-              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/60 hover:bg-stone-100 hover:border-[#d4a359] text-stone-800 font-semibold transition text-center flex flex-col items-center justify-center gap-1.5"
+              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/60 hover:bg-stone-100 hover:border-[#d4a359] text-stone-800 font-semibold transition text-center flex flex-col items-center justify-center gap-1.5 min-h-[44px]"
             >
-              <Compass className="w-4 h-4 text-emerald-700" />
+              <TrendingUp className="w-4 h-4 text-emerald-700" />
               <span>My Progress</span>
             </Link>
 
             <Link
-              href="/quiz"
-              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/60 hover:bg-stone-100 hover:border-[#d4a359] text-stone-800 font-semibold transition text-center flex flex-col items-center justify-center gap-1.5"
+              href="/ai/chat"
+              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/60 hover:bg-stone-100 hover:border-[#d4a359] text-stone-800 font-semibold transition text-center flex flex-col items-center justify-center gap-1.5 min-h-[44px]"
             >
-              <Award className="w-4 h-4 text-purple-700" />
-              <span>Take Quiz</span>
+              <Sparkles className="w-4 h-4 text-[#d4a359]" />
+              <span>Astro AI</span>
             </Link>
           </div>
         </div>

@@ -6,6 +6,7 @@ import {
   HeartHandshake,
   Sparkles,
   Calendar,
+  Hash,
 } from "lucide-react";
 
 export default function PopularTools() {
@@ -16,6 +17,13 @@ export default function PopularTools() {
       icon: Compass,
       color: "bg-amber-100 text-amber-900 border border-amber-200",
       href: "/astrology",
+    },
+    {
+      title: "Vedic Numerology",
+      desc: "Mulank, Bhagyank, Loshu Grid",
+      icon: Hash,
+      color: "bg-indigo-100 text-indigo-900 border border-indigo-200",
+      href: "/astrology/numerology",
     },
     {
       title: "Dasha Calculator",
@@ -30,13 +38,6 @@ export default function PopularTools() {
       icon: HeartHandshake,
       color: "bg-purple-100 text-purple-900 border border-purple-200",
       href: "/astrology",
-    },
-    {
-      title: "Vedic Remedies",
-      desc: "Traditional shastric upayas",
-      icon: Sparkles,
-      color: "bg-emerald-100 text-emerald-900 border border-emerald-200",
-      href: "/ai/chat",
     },
     {
       title: "Daily Panchang",

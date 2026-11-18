@@ -14,7 +14,22 @@ export async function PATCH(request, { params }) {
     const user = auth.user;
 
     const body = await request.json();
-    const { title, subheading, chapterNumber, startPage, endPage, status, isPublished } = body;
+    const {
+      title,
+      subheading,
+      structuralType,
+      sanskritTitle,
+      hindiTitle,
+      englishTitle,
+      parentId,
+      sequenceNumber,
+      sortOrder,
+      chapterNumber,
+      startPage,
+      endPage,
+      status,
+      isPublished,
+    } = body;
 
     const existing = await prisma.chapter.findUnique({
       where: { id: chapterId },
@@ -28,6 +43,13 @@ export async function PATCH(request, { params }) {
     const dataToUpdate = {};
     if (title !== undefined) dataToUpdate.title = title;
     if (subheading !== undefined) dataToUpdate.subheading = subheading;
+    if (structuralType !== undefined) dataToUpdate.structuralType = structuralType;
+    if (sanskritTitle !== undefined) dataToUpdate.sanskritTitle = sanskritTitle;
+    if (hindiTitle !== undefined) dataToUpdate.hindiTitle = hindiTitle;
+    if (englishTitle !== undefined) dataToUpdate.englishTitle = englishTitle;
+    if (parentId !== undefined) dataToUpdate.parentId = parentId || null;
+    if (sortOrder !== undefined) dataToUpdate.sortOrder = Number(sortOrder);
+    if (sequenceNumber !== undefined) dataToUpdate.sequenceNumber = Number(sequenceNumber);
     if (chapterNumber !== undefined) {
       dataToUpdate.chapterNumber = Number(chapterNumber);
       dataToUpdate.number = Number(chapterNumber);

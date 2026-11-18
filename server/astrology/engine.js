@@ -13,6 +13,7 @@ import {
   computeAscendant,
   computeGrahaPositions,
   buildHouses,
+  computePlanetaryAspects,
 } from "./calculations.js";
 import { AYANAMSA_TYPE } from "./constants.js";
 import { computeAllDivisionalCharts } from "./divisionalCharts.js";
@@ -57,7 +58,7 @@ export function calculateBirthChart(input = {}) {
   const moon = rawPlanets.find((p) => p.planet === "MOON");
 
   // 5. Enrich planets with Dignity and Combustion
-  const planets = rawPlanets.map((p) => {
+  const enrichedPlanets = rawPlanets.map((p) => {
     const dignity = calculatePlanetaryDignity(p.planet, p.signIndex, p.degree);
     const combustion = checkCombustion(p, sun);
     return {
@@ -69,6 +70,9 @@ export function calculateBirthChart(input = {}) {
       combustionSeparation: combustion.separationDeg,
     };
   });
+
+  // 5b. Compute Classical Parashara Graha Drishti (Planetary Aspects)
+  const planets = computePlanetaryAspects(enrichedPlanets);
 
   // 6. 12 Houses (Bhavas)
   const houses = buildHouses(ascendant.signIndex, planets);

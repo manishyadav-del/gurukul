@@ -24,7 +24,14 @@ export default async function DashboardPage() {
     if (session?.user?.id) userId = session.user.id;
   } catch {}
 
-  const [dashboardData, familyCount, pendingInvitesCount, kundliCount] = await Promise.all([
+  const [
+    dashboardData,
+    familyCount,
+    pendingInvitesCount,
+    kundliCount,
+    numerologyCount,
+    readingCount,
+  ] = await Promise.all([
     getLearningDashboardData(userId),
     userId
       ? prisma.familyMember.count({
@@ -32,7 +39,7 @@ export default async function DashboardPage() {
             OR: [{ ownerId: userId }, { linkedUserId: userId }],
             isArchived: false,
           },
-        })
+        }).catch(() => 0)
       : 0,
     userId
       ? prisma.familyInvitation.count({
@@ -41,12 +48,22 @@ export default async function DashboardPage() {
             status: "PENDING",
             expiresAt: { gt: new Date() },
           },
-        })
+        }).catch(() => 0)
       : 0,
     userId
       ? prisma.birthProfile.count({
           where: { userId },
-        })
+        }).catch(() => 0)
+      : 0,
+    userId
+      ? prisma.numerologyReport.count({
+          where: { userId },
+        }).catch(() => 0)
+      : 0,
+    userId
+      ? prisma.readingProgress.count({
+          where: { userId },
+        }).catch(() => 0)
       : 0,
   ]);
 
@@ -112,6 +129,8 @@ export default async function DashboardPage() {
         familyCount={familyCount}
         pendingInvitesCount={pendingInvitesCount}
         kundliCount={kundliCount}
+        numerologyCount={numerologyCount}
+        readingCount={readingCount}
       />
 
       {/* Personalized Learning & Recommendation Engine Client */}

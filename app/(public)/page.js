@@ -10,7 +10,7 @@ import PopularTools from "@/components/home/PopularTools";
 import { computePanchang } from "@/server/astrology/panchang";
 
 export default async function HomePage() {
-  // Fetch published books
+  // Fetch published books ordered by publication date
   const books = await prisma.book
     .findMany({
       where: { status: "PUBLISHED" },
@@ -20,9 +20,11 @@ export default async function HomePage() {
         slug: true,
         language: true,
         coverUrl: true,
+        coverImageUrl: true,
         pageCount: true,
+        publishedAt: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
       take: 6,
     })
     .catch(() => []);
