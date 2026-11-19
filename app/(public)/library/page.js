@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import { getIntelligentBookRecommendations } from "@/server/learning/recommendationEngine";
 
 export const metadata = {
-  title: "Digital Library - Gurukul",
+  title: "Digital Library – Gurukul Digital Museum",
   description:
     "Explore authentic sacred Vedic manuscripts, Jyotisha shastras, Upanishads, and classical commentaries in Hindi, Sanskrit, and English.",
 };

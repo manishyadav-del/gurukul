@@ -16,11 +16,11 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col bg-[#fcfaf5] text-stone-900 antialiased selection:bg-[#d4a359]/30 selection:text-[#13382c]">
+      <body className="min-h-screen flex flex-col bg-[#F7F5F0] text-[#30251F] antialiased selection:bg-[#D05C3B]/20 selection:text-[#30251F]">
         {/* Skip to Main Content Link for Keyboard & Screen Reader Users (WCAG 2.2 AA) */}
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-[#13382c] focus:text-white focus:rounded-lg focus:shadow-xl focus:outline-2 focus:outline-[#d4a359] text-xs font-semibold"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-[#30251F] focus:text-[#F7F5F0] focus:rounded-lg focus:shadow-xl focus:outline-2 focus:outline-[#D05C3B] text-xs font-semibold"
         >
           Skip to main content
         </a>

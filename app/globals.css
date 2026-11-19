@@ -2,8 +2,10 @@
 
 @layer base {
   :root {
-    --background: 252 250 245; /* Warm Vedic parchment #fcfaf5 */
-    --foreground: 28 25 23;    /* High contrast stone-900 #1c1917 */
+    --background: 247 245 240; /* Warm ivory #F7F5F0 */
+    --foreground: 48 37 31;    /* Espresso-brown #30251F */
+    --accent: 208 92 59;       /* Terracotta-orange #D05C3B */
+    --sand: 232 222 210;       /* Warm secondary sand #E8DED2 */
     --font-serif: "Cinzel", "Georgia", "Cambria", "Times New Roman", serif;
     --font-sanskrit: "Noto Serif Devanagari", "Tiro Devanagari Sanskrit", "Kohinoor Devanagari", "Mangal", "Lohit Devanagari", serif;
     --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Devanagari", sans-serif;
@@ -22,8 +24,8 @@ html {
 }
 
 body {
-  color: #1c1917;
-  background-color: #fcfaf5;
+  color: #30251F;
+  background-color: #F7F5F0;
   font-family: var(--font-sans);
   line-height: 1.6;
   font-size: 15px;
@@ -45,14 +47,14 @@ body {
 
 /* High Contrast Heading Scale */
 h1, h2, h3, h4, h5, h6 {
-  color: #13382c;
+  color: #30251F;
   line-height: 1.25;
   font-weight: 700;
 }
 
 /* Accessible Focus Indicators (WCAG 2.2 AA) */
 :focus-visible {
-  outline: 2px solid #c4903c !important;
+  outline: 2px solid #D05C3B !important;
   outline-offset: 2px !important;
   border-radius: 4px;
 }
@@ -62,7 +64,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #c4903c !important;
+  outline: 2px solid #D05C3B !important;
   outline-offset: 2px !important;
 }
 
@@ -79,20 +81,20 @@ textarea:focus-visible {
 .prose-reading {
   max-width: 72ch;
   line-height: 1.75;
-  color: #292524;
+  color: #30251F;
 }
 
 /* High-Contrast Sanskrit Verse Box */
 .shloka-box {
-  background: #fdfaf3;
-  border-left: 4px solid #c4903c;
+  background: #FFFFFF;
+  border-left: 4px solid #D05C3B;
   border-radius: 0 12px 12px 0;
   padding: 1rem 1.25rem;
   font-family: var(--font-sanskrit);
   font-size: 1.05rem;
   line-height: 1.9;
-  color: #13382c;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  color: #30251F;
+  box-shadow: 0 1px 3px rgba(48, 37, 31, 0.06);
 }
 
 /* Refined Subtle Custom Scrollbars */
@@ -102,16 +104,16 @@ textarea:focus-visible {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f5ede0;
+  background: #F7F5F0;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c9ab7b;
+  background: #E8DED2;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a9854e;
+  background: #D05C3B;
 }
 
 /* Reduced Motion Support */

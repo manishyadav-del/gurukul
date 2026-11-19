@@ -47,6 +47,25 @@ export default function HomeHero() {
               Browse Library
             </Link>
           </div>
+
+          {/* Discovery tag pills */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {[
+              { label: "Shastra Learning",   href: "/library?category=shastra"   },
+              { label: "Vedic Jyotisha",      href: "/library?category=astrology" },
+              { label: "Sanskrit Texts",      href: "/library?category=sanskrit"  },
+              { label: "Philosophy",          href: "/library?category=philosophy"},
+              { label: "Yoga & Spirituality", href: "/library?category=yoga"      },
+            ].map((tag) => (
+              <Link
+                key={tag.label}
+                href={tag.href}
+                className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white/80 hover:text-white transition-colors backdrop-blur-xs"
+              >
+                {tag.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </section>

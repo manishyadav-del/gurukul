@@ -394,7 +394,7 @@ export default function InteractiveKnowledgeGraph({
             <button
               onClick={handleFindPath}
               disabled={pathLoading || !pathStart || !pathEnd}
-              className="px-3.5 py-1 rounded-lg bg-[#13382c] hover:bg-[#1b4b3c] text-amber-300 font-bold text-xs transition disabled:opacity-50"
+              className="px-3.5 py-1 rounded-lg bg-[#D05C3B] hover:bg-[#bc4f30] text-white font-bold text-xs transition disabled:opacity-50 shadow-xs"
             >
               {pathLoading ? "Tracing..." : "Find Path"}
             </button>
@@ -851,7 +851,7 @@ export default function InteractiveKnowledgeGraph({
                 <div className="pt-3 border-t border-stone-200 flex flex-col gap-2">
                   <Link
                     href={`/research?q=${encodeURIComponent(nodeDetails.name)}`}
-                    className="w-full py-2.5 rounded-xl bg-[#13382c] hover:bg-[#1a4a3b] text-amber-300 font-bold text-center transition flex items-center justify-center gap-1.5 shadow-xs"
+                    className="w-full py-2.5 rounded-xl bg-[#D05C3B] hover:bg-[#bc4f30] text-white font-bold text-center transition flex items-center justify-center gap-1.5 shadow-xs"
                   >
                     <Sparkles className="w-4 h-4" />
                     <span>Research this Concept with AI</span>

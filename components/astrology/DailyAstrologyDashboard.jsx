@@ -47,6 +47,7 @@ import HoroscopeKnowledgeExplorer from "./HoroscopeKnowledgeExplorer";
 import LiveChoghadiyaWatch from "./LiveChoghadiyaWatch.jsx";
 import VedicCalendarStudio from "./VedicCalendarStudio";
 import WorldLocationModal from "./WorldLocationModal";
+import PlaceAutocompleteInput from "./PlaceAutocompleteInput";
 import FamilyAstrologyCircle from "./FamilyAstrologyCircle";
 import PanchangKnowledgeModal from "./PanchangKnowledgeModal";
 import VedicNumerologyStudio from "./VedicNumerologyStudio";
@@ -2204,13 +2205,23 @@ export default function DailyAstrologyDashboard({ initialTab = "overview" }) {
                                       <label className="text-[10px] uppercase tracking-wider font-bold text-stone-500 block mb-1">
                                         {isHi ? "स्थान का नाम (City / Town / Country)" : "Place Name (Any City, Town, Village, or Country)"}
                                       </label>
-                                      <input
-                                        type="text"
-                                        required
+                                      <PlaceAutocompleteInput
                                         value={kundliForm.customPlaceName}
-                                        onChange={(e) => setKundliForm({ ...kundliForm, customPlaceName: e.target.value })}
+                                        onChange={(val) => setKundliForm((prev) => ({ ...prev, customPlaceName: val }))}
+                                        onSelectLocation={(loc) => {
+                                          setKundliForm((prev) => ({
+                                            ...prev,
+                                            isCustomPlace: true,
+                                            place: "__custom__",
+                                            customPlaceName: loc.name,
+                                            customLat: String(loc.lat),
+                                            customLon: String(loc.lon),
+                                            customTz: loc.tzStr || (typeof loc.tz === "number" ? formatTzOffset(loc.tz) : String(loc.tz || "+05:30")),
+                                          }));
+                                        }}
+                                        isHi={isHi}
                                         placeholder={isHi ? "उदा. टोक्यो, जापान / अयोध्या, भारत" : "e.g. Tokyo, Japan / Ayodhya, India / Paris, France"}
-                                        className="w-full bg-white border border-[#ede5d6] rounded-lg px-2.5 py-1.5 text-xs text-stone-900 focus:outline-none"
+                                        onOpenModal={() => setShowKundliLocationModal(true)}
                                       />
                                     </div>
 

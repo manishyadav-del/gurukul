@@ -1,16 +1,23 @@
 import prisma from "@/lib/prisma";
-import HomeHero from "@/components/home/HomeHero";
-import FeatureCategoryBar from "@/components/home/FeatureCategoryBar";
-import HomePanchangSection from "@/components/home/HomePanchangSection";
-import HomeQuickActions from "@/components/home/HomeQuickActions";
-import QuoteRibbon from "@/components/home/QuoteRibbon";
-import RecentlyAddedBooks from "@/components/home/RecentlyAddedBooks";
-import TrendingTopics from "@/components/home/TrendingTopics";
-import PopularTools from "@/components/home/PopularTools";
+import MuseumHero from "@/components/museum/MuseumHero";
+import ExploreKnowledgeSection from "@/components/museum/ExploreKnowledgeSection";
+import FeaturedManuscriptsSection from "@/components/museum/FeaturedManuscriptsSection";
+import DigitalLibrarySection from "@/components/museum/DigitalLibrarySection";
+import KnowledgeCollectionsSection from "@/components/museum/KnowledgeCollectionsSection";
+import ResearchDiscoverSection from "@/components/museum/ResearchDiscoverSection";
+import VedicAstrologyMuseumSection from "@/components/museum/VedicAstrologyMuseumSection";
+import LearnGrowMuseumSection from "@/components/museum/LearnGrowMuseumSection";
+import LatestPublicationsSection from "@/components/museum/LatestPublicationsSection";
 import { computePanchang } from "@/server/astrology/panchang";
 
+export const metadata = {
+  title: "Gurukul – Digital Museum of Timeless Wisdom",
+  description:
+    "Explore authentic sacred Vedic manuscripts, classical Jyotisha shastras, Sanskrit grammar, and Upanishadic wisdom through a museum-grade digital experience.",
+};
+
 export default async function HomePage() {
-  // Fetch published books ordered by publication date
+  // Fetch real published books ordered by publication date
   const books = await prisma.book
     .findMany({
       where: { status: "PUBLISHED" },
@@ -18,14 +25,20 @@ export default async function HomePage() {
         id: true,
         title: true,
         slug: true,
+        author: true,
+        description: true,
+        tradition: true,
         language: true,
+        script: true,
         coverUrl: true,
         coverImageUrl: true,
         pageCount: true,
+        status: true,
         publishedAt: true,
+        createdAt: true,
       },
       orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
-      take: 6,
+      take: 12,
     })
     .catch(() => []);
 
@@ -45,37 +58,33 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="bg-[#fcfaf5] min-h-screen space-y-6 pb-12">
-      {/* 1. Hero Section */}
-      <HomeHero />
+    <div className="bg-[#F7F5F0] min-h-screen text-[#30251F]">
+      {/* 1. Hero – Digital Museum of Timeless Wisdom */}
+      <MuseumHero />
 
-      {/* Main Content Width Container */}
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* 2. Feature Category Pills Bar */}
-        <FeatureCategoryBar />
+      {/* 2. Explore Knowledge – Shastra, Vedic Astrology, Heritage, Sanskrit, Philosophy & Science */}
+      <ExploreKnowledgeSection />
 
-        {/* 3. Today's Panchang Section */}
-        <HomePanchangSection initialPanchang={initialPanchang} />
+      {/* 3. Featured Manuscripts – Large visual manuscript cards */}
+      <FeaturedManuscriptsSection books={books} />
 
-        {/* 4. Quick Actions */}
-        <HomeQuickActions />
+      {/* 4. Digital Library – Actual published books and categories */}
+      <DigitalLibrarySection books={books} />
 
-        {/* 5. Quote Ribbon */}
-        <QuoteRibbon />
+      {/* 5. Knowledge Collections – Curated collections of related texts */}
+      <KnowledgeCollectionsSection />
 
-        {/* 6. Discover Books, Topics & Tools */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pt-2">
-          <div className="lg:col-span-6">
-            <RecentlyAddedBooks books={books} />
-          </div>
-          <div className="lg:col-span-3">
-            <TrendingTopics />
-          </div>
-          <div className="lg:col-span-3">
-            <PopularTools />
-          </div>
-        </div>
-      </div>
+      {/* 6. Research and Discover – Original passages, translations and explanations */}
+      <ResearchDiscoverSection />
+
+      {/* 7. Vedic Astrology – Kundli, Numerology, Panchang and Dasha */}
+      <VedicAstrologyMuseumSection panchang={initialPanchang} />
+
+      {/* 8. Learn and Grow – Learning resources and Sanskrit education */}
+      <LearnGrowMuseumSection />
+
+      {/* 9. Latest Publications – Actual published articles and books */}
+      <LatestPublicationsSection books={books} />
     </div>
   );
 }

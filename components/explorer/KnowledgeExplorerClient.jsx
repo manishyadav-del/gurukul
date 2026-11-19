@@ -566,43 +566,47 @@ export default function KnowledgeExplorerClient() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#fcfaf5] text-stone-900 pb-16">
-      {/* 1. Header Banner */}
-      <section className="bg-gradient-to-b from-[#13382c] to-[#0d271f] text-white pt-8 pb-10 px-4 sm:px-6 lg:px-8 border-b border-[#c4903c]/20 shadow-md">
-        <div className="max-w-[1440px] mx-auto">
+    <div className="min-h-screen bg-[#F7F5F0] text-[#30251F] pb-20">
+      {/* 1. Header Banner - Gurukul Digital Museum Identity */}
+      <section className="relative overflow-hidden bg-[#F7F5F0] border-b border-[#E8DED2] pt-8 pb-10 sm:pt-12 sm:pb-14 px-4 sm:px-6 lg:px-8">
+        {/* Soft Blurred Background Warmth */}
+        <div className="absolute top-0 right-1/4 -mr-36 -mt-24 w-96 h-96 rounded-full bg-gradient-to-br from-[#D05C3B]/10 via-[#F2B872]/15 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-10 -mb-28 w-80 h-80 rounded-full bg-gradient-to-tr from-[#E8DED2] via-[#D05C3B]/5 to-transparent blur-3xl pointer-events-none" />
+
+        <div className="max-w-[1440px] mx-auto relative z-10">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#c4903c]/20 border border-[#c4903c]/40 text-[#f3caa1] text-xs font-semibold uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5 text-[#d4a359]" />
-                Classical Vedic Ontology & Kundalini Explorer
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E8DED2]/60 border border-[#E8DED2] text-[#D05C3B] text-xs font-semibold tracking-wider uppercase font-sans">
+                <Sparkles className="w-3.5 h-3.5 text-[#D05C3B]" />
+                <span>Classical Vedic Ontology &amp; Kundalini Explorer</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-bold text-white tracking-tight">
-                Gurukul AI Knowledge Explorer
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-[#30251F] tracking-tight leading-tight">
+                Gurukul <span className="italic font-normal text-[#D05C3B]">AI Knowledge Explorer</span>
               </h1>
-              <p className="text-sm sm:text-base text-stone-300 max-w-2xl font-light leading-relaxed">
+              <p className="text-sm sm:text-base text-[#30251F]/80 max-w-2xl font-sans leading-relaxed">
                 Interconnect authentic Vedic Astrology (Jyotisha Shastra), North Indian Kundli chart interpretation, and Shat-Chakra Yogic Subtle Anatomy grounded in original Sanskrit manuscripts.
               </p>
             </div>
 
             {/* View Mode Tabs (Knowledge Graph, Concept Details, Kundli Chart, AI Assistant) */}
-            <div className="flex items-center gap-2 bg-[#1b4d3d]/60 p-1.5 rounded-xl border border-white/10 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 bg-[#E8DED2]/50 p-1.5 rounded-2xl border border-[#E8DED2] shrink-0">
               <button
                 onClick={() => setActiveTab("graph")}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium transition cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition cursor-pointer ${
                   activeTab === "graph"
-                    ? "bg-[#d4a359] text-[#13382c] font-bold shadow-xs"
-                    : "text-stone-300 hover:text-white hover:bg-white/5"
+                    ? "bg-[#30251F] text-white font-semibold shadow-xs"
+                    : "bg-white/80 hover:bg-white text-[#30251F]/80 hover:text-[#30251F] border border-transparent hover:border-[#E8DED2]"
                 }`}
               >
-                <Network className="w-4 h-4 text-[#d4a359]" />
+                <Network className={`w-4 h-4 ${activeTab === "graph" ? "text-[#F2B872]" : "text-[#D05C3B]"}`} />
                 <span>Knowledge Graph</span>
               </button>
               <button
                 onClick={() => setActiveTab("concept")}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium transition cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition cursor-pointer ${
                   activeTab === "concept"
-                    ? "bg-[#d4a359] text-[#13382c] font-bold shadow-xs"
-                    : "text-stone-300 hover:text-white hover:bg-white/5"
+                    ? "bg-[#D05C3B] text-white font-semibold shadow-xs"
+                    : "bg-white/80 hover:bg-white text-[#30251F]/80 hover:text-[#30251F] border border-transparent hover:border-[#E8DED2]"
                 }`}
               >
                 <BookOpen className="w-4 h-4" />
@@ -610,24 +614,24 @@ export default function KnowledgeExplorerClient() {
               </button>
               <button
                 onClick={() => setActiveTab("chart")}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium transition cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition cursor-pointer ${
                   activeTab === "chart"
-                    ? "bg-[#d4a359] text-[#13382c] font-bold shadow-xs"
-                    : "text-stone-300 hover:text-white hover:bg-white/5"
+                    ? "bg-[#30251F] text-white font-semibold shadow-xs"
+                    : "bg-white/80 hover:bg-white text-[#30251F]/80 hover:text-[#30251F] border border-transparent hover:border-[#E8DED2]"
                 }`}
               >
-                <Compass className="w-4 h-4" />
+                <Compass className={`w-4 h-4 ${activeTab === "chart" ? "text-[#F2B872]" : "text-[#D05C3B]"}`} />
                 <span>Interactive Kundli</span>
               </button>
               <button
                 onClick={() => setActiveTab("ai")}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium transition cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition cursor-pointer ${
                   activeTab === "ai"
-                    ? "bg-[#d4a359] text-[#13382c] font-bold shadow-xs"
-                    : "text-stone-300 hover:text-white hover:bg-white/5"
+                    ? "bg-[#D05C3B] text-white font-semibold shadow-xs"
+                    : "bg-white/80 hover:bg-white text-[#30251F]/80 hover:text-[#30251F] border border-transparent hover:border-[#E8DED2]"
                 }`}
               >
-                <MessageSquare className="w-4 h-4 text-[#d4a359]" />
+                <MessageSquare className={`w-4 h-4 ${activeTab === "ai" ? "text-[#F2B872]" : "text-[#D05C3B]"}`} />
                 <span>Ask AI Shastra</span>
               </button>
             </div>
@@ -636,18 +640,18 @@ export default function KnowledgeExplorerClient() {
           {/* Multilingual Live Search Bar */}
           <div className="mt-6 flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5 pointer-events-none" />
+              <Search className="w-4 h-4 text-[#30251F]/40 absolute left-4 top-4 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search across Sanskrit, English, Hindi (e.g. Manipura, सूर्य, 10th House, Rohini, Vayu)..."
-                className="w-full bg-white text-stone-900 text-sm pl-10 pr-4 py-2.5 rounded-xl shadow-inner border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#d4a359]"
+                className="w-full bg-white text-[#30251F] text-sm pl-11 pr-12 py-3.5 rounded-2xl shadow-xs border border-[#E8DED2] focus:outline-none focus:ring-2 focus:ring-[#D05C3B]/40 focus:border-[#D05C3B] placeholder:text-[#30251F]/40"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-3 text-xs text-stone-400 hover:text-stone-600 font-bold"
+                  className="absolute right-4 top-3.5 text-xs text-[#30251F]/50 hover:text-[#D05C3B] font-semibold cursor-pointer"
                 >
                   Clear
                 </button>
@@ -661,10 +665,10 @@ export default function KnowledgeExplorerClient() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-full whitespace-nowrap transition cursor-pointer ${
+                className={`px-4 py-2 rounded-full whitespace-nowrap transition cursor-pointer font-medium ${
                   selectedCategory === cat.id
-                    ? "bg-[#d4a359] text-[#13382c] font-bold shadow-xs"
-                    : "bg-[#1e4a3c]/80 text-stone-300 hover:text-white hover:bg-[#255c4b]"
+                    ? "bg-[#30251F] text-white font-semibold shadow-xs"
+                    : "bg-white hover:bg-[#E8DED2]/60 text-[#30251F]/80 border border-[#E8DED2]"
                 }`}
               >
                 {cat.label} ({cat.count})
@@ -675,7 +679,7 @@ export default function KnowledgeExplorerClient() {
       </section>
 
       {/* 2. Main Content Grid */}
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         {activeTab === "graph" ? (
           <div className="w-full pb-8">
             <InteractiveKnowledgeGraph
@@ -687,24 +691,24 @@ export default function KnowledgeExplorerClient() {
             />
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Column: Concept Directory (4 columns on lg) */}
             <aside className="lg:col-span-4 space-y-4">
-            <div className="bg-white rounded-2xl border border-stone-200/80 shadow-xs p-4 flex flex-col h-[750px]">
-              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-                <div className="flex items-center gap-2 text-stone-700 font-serif font-bold text-sm">
-                  <Layers className="w-4 h-4 text-[#c4903c]" />
+            <div className="bg-white rounded-3xl border border-[#E8DED2] shadow-sm shadow-[#30251F]/5 p-5 flex flex-col h-[780px]">
+              <div className="flex items-center justify-between pb-3.5 border-b border-[#E8DED2]">
+                <div className="flex items-center gap-2 text-[#30251F] font-serif font-bold text-sm">
+                  <Layers className="w-4 h-4 text-[#D05C3B]" />
                   <span>Concepts ({filteredConcepts.length})</span>
                 </div>
-                <span className="text-[11px] text-stone-400 font-mono">
-                  {selectedCategory.toUpperCase()}
+                <span className="text-[11px] text-[#30251F]/50 font-mono uppercase tracking-wider">
+                  {selectedCategory}
                 </span>
               </div>
 
               {/* Scrollable list */}
-              <div className="flex-1 overflow-y-auto divide-y divide-stone-100 pr-1 mt-2">
+              <div className="flex-1 overflow-y-auto divide-y divide-[#E8DED2]/60 pr-1 mt-2">
                 {filteredConcepts.length === 0 ? (
-                  <div className="text-center py-12 text-stone-400 text-xs">
+                  <div className="text-center py-12 text-[#30251F]/50 text-xs">
                     No concepts match your search. Try searching for a deity, graha, or chakra.
                   </div>
                 ) : (
@@ -720,27 +724,27 @@ export default function KnowledgeExplorerClient() {
                           setSelectedConceptKey(item.key);
                           setActiveTab("concept");
                         }}
-                        className={`p-3 rounded-xl transition cursor-pointer text-left my-1 flex items-start justify-between gap-3 ${
+                        className={`p-3.5 rounded-2xl transition cursor-pointer text-left my-1.5 flex items-start justify-between gap-3 ${
                           isSelected
-                            ? "bg-[#13382c] text-white shadow-xs"
-                            : "hover:bg-stone-50 text-stone-800"
+                            ? "bg-[#30251F] text-[#F7F5F0] shadow-md shadow-[#30251F]/15 border border-[#30251F]"
+                            : "hover:bg-[#FAF8F5] border border-transparent hover:border-[#E8DED2] text-[#30251F]"
                         }`}
                       >
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span
-                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider font-mono ${
                                 isSelected
-                                  ? "bg-[#c4903c] text-[#13382c]"
-                                  : "bg-stone-100 text-stone-600"
+                                  ? "bg-[#D05C3B] text-white"
+                                  : "bg-[#E8DED2]/60 text-[#30251F]/70"
                               }`}
                             >
                               {item.category}
                             </span>
                             {item.sanskrit && (
                               <span
-                                className={`text-xs font-serif ${
-                                  isSelected ? "text-[#f3caa1]" : "text-[#c4903c]"
+                                className={`text-xs font-serif font-semibold ${
+                                  isSelected ? "text-[#F2B872]" : "text-[#D05C3B]"
                                 }`}
                               >
                                 {item.sanskrit}
@@ -748,33 +752,33 @@ export default function KnowledgeExplorerClient() {
                             )}
                           </div>
                           <h4
-                            className={`text-xs sm:text-sm font-semibold truncate ${
-                              isSelected ? "text-white" : "text-stone-900"
+                            className={`text-sm font-serif font-bold truncate ${
+                              isSelected ? "text-white" : "text-[#30251F]"
                             }`}
                           >
                             {item.name}
                           </h4>
                           <p
-                            className={`text-[11px] line-clamp-1 ${
-                              isSelected ? "text-stone-300" : "text-stone-500"
+                            className={`text-[11px] line-clamp-1 leading-snug ${
+                              isSelected ? "text-[#F7F5F0]/80" : "text-[#30251F]/70"
                             }`}
                           >
                             {item.summary}
                           </p>
                         </div>
 
-                        <div className="flex flex-col items-end gap-1 shrink-0 pt-1">
+                        <div className="flex flex-col items-end gap-1.5 shrink-0 pt-1">
                           {isBookmarked && (
                             <Star
                               className={`w-3.5 h-3.5 fill-current ${
-                                isSelected ? "text-[#f3caa1]" : "text-amber-500"
+                                isSelected ? "text-[#F2B872]" : "text-[#D05C3B]"
                               }`}
                             />
                           )}
                           {isCompleted && (
                             <CheckCircle2
                               className={`w-3.5 h-3.5 ${
-                                isSelected ? "text-emerald-300" : "text-emerald-600"
+                                isSelected ? "text-[#F2B872]" : "text-emerald-600"
                               }`}
                             />
                           )}
@@ -786,16 +790,16 @@ export default function KnowledgeExplorerClient() {
               </div>
 
               {/* Learning Progress Summary Footer */}
-              <div className="pt-3 border-t border-stone-100 text-xs text-stone-600 space-y-1.5 bg-stone-50/50 -mx-4 -mb-4 p-3 rounded-b-2xl">
-                <div className="flex justify-between items-center text-[11px] font-medium text-stone-500">
+              <div className="pt-3.5 border-t border-[#E8DED2] text-xs text-[#30251F]/80 space-y-2 bg-[#FAF8F5] -mx-5 -mb-5 p-4 rounded-b-3xl">
+                <div className="flex justify-between items-center text-[11px] font-medium text-[#30251F]/70">
                   <span>Your Study Progress</span>
-                  <span>
+                  <span className="font-mono font-semibold">
                     {Object.keys(completedMap).length} / {ALL_CONCEPTS.length} completed
                   </span>
                 </div>
-                <div className="w-full bg-stone-200 h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-[#E8DED2] h-2 rounded-full overflow-hidden">
                   <div
-                    className="bg-[#13382c] h-full transition-all duration-300 rounded-full"
+                    className="bg-[#D05C3B] h-full transition-all duration-300 rounded-full"
                     style={{
                       width: `${Math.min(
                         100,
@@ -804,12 +808,12 @@ export default function KnowledgeExplorerClient() {
                     }}
                   />
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-stone-500 pt-0.5">
-                  <span className="flex items-center gap-1">
-                    <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                <div className="flex items-center justify-between text-[11px] text-[#30251F]/70 pt-0.5">
+                  <span className="flex items-center gap-1 font-medium">
+                    <Star className="w-3.5 h-3.5 text-[#D05C3B] fill-[#D05C3B]" />
                     {Object.keys(savedConcepts).length} Bookmarked
                   </span>
-                  <span>{user ? `Logged in: ${user.name}` : "Guest Mode"}</span>
+                  <span className="font-medium">{user ? `Logged in: ${user.name}` : "Guest Mode"}</span>
                 </div>
               </div>
             </div>
@@ -821,39 +825,39 @@ export default function KnowledgeExplorerClient() {
             {activeTab === "concept" && (
               <div className="space-y-6 animate-in fade-in duration-150">
                 {/* Main Card */}
-                <div className="bg-white rounded-2xl border border-stone-200/80 shadow-xs p-6 space-y-6">
+                <div className="bg-white rounded-3xl border border-[#E8DED2] shadow-sm shadow-[#30251F]/5 p-6 sm:p-8 space-y-6">
                   {/* Top Bar with Badges and Actions */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#E8DED2]">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#13382c]/10 text-[#13382c] uppercase tracking-wider">
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#E8DED2]/60 text-[#30251F] uppercase tracking-wider font-mono">
                           {currentConcept.categoryLabel}
                         </span>
                         {currentConcept.sanskrit && (
-                          <span className="text-sm font-serif font-bold text-[#c4903c]">
+                          <span className="text-sm font-serif font-bold text-[#D05C3B]">
                             {currentConcept.sanskrit}
                           </span>
                         )}
                       </div>
-                      <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900 mt-1">
+                      <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#30251F] mt-2 tracking-tight">
                         {currentConcept.name}
                       </h2>
                     </div>
 
                     {/* Quick action buttons */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
                       <button
                         onClick={handleToggleBookmark}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border transition cursor-pointer ${
                           savedConcepts[currentConcept.key]
-                            ? "bg-amber-50 border-amber-300 text-amber-800"
-                            : "border-stone-200 text-stone-700 hover:bg-stone-50"
+                            ? "bg-[#D05C3B]/10 border-[#D05C3B] text-[#D05C3B] font-semibold"
+                            : "border-[#E8DED2] text-[#30251F] hover:bg-[#FAF8F5]"
                         }`}
                         title="Save to your bookmarks"
                       >
                         <Bookmark
                           className={`w-3.5 h-3.5 ${
-                            savedConcepts[currentConcept.key] ? "fill-current text-amber-600" : ""
+                            savedConcepts[currentConcept.key] ? "fill-current text-[#D05C3B]" : ""
                           }`}
                         />
                         <span>
@@ -863,10 +867,10 @@ export default function KnowledgeExplorerClient() {
 
                       <button
                         onClick={handleToggleCompletion}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border transition cursor-pointer ${
                           completedMap[currentConcept.key]
-                            ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                            : "border-stone-200 text-stone-700 hover:bg-stone-50"
+                            ? "bg-emerald-50 border-emerald-300 text-emerald-800 font-semibold"
+                            : "border-[#E8DED2] text-[#30251F] hover:bg-[#FAF8F5]"
                         }`}
                         title="Mark as studied"
                       >
@@ -884,10 +888,10 @@ export default function KnowledgeExplorerClient() {
                         onClick={() => {
                           setActiveTab("graph");
                         }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-900/90 text-amber-300 hover:bg-emerald-800 transition cursor-pointer shadow-xs border border-amber-400/20"
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#30251F] text-white hover:bg-[#201814] transition cursor-pointer shadow-xs"
                         title="View this concept in the AI Knowledge Graph"
                       >
-                        <Network className="w-3.5 h-3.5" />
+                        <Network className="w-3.5 h-3.5 text-[#F2B872]" />
                         <span>View in Graph</span>
                       </button>
 
@@ -898,60 +902,60 @@ export default function KnowledgeExplorerClient() {
                             `Provide deep classical shastric explanation for ${currentConcept.name} and its traditional significance.`
                           );
                         }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#13382c] text-white hover:bg-[#1b4d3d] transition cursor-pointer shadow-xs"
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#D05C3B] text-white hover:bg-[#bc4f30] transition cursor-pointer shadow-xs"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-[#d4a359]" />
+                        <Sparkles className="w-3.5 h-3.5 text-white" />
                         <span>Ask AI</span>
                       </button>
                     </div>
                   </div>
 
                   {/* Summary / Core Shastric Definition */}
-                  <div className="bg-[#fcfaf5] p-4 rounded-xl border border-stone-200/80">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">
-                      Traditional Signification
+                  <div className="space-y-1.5">
+                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#30251F]/60 font-mono">
+                      TRADITIONAL SIGNIFICATION
                     </h3>
-                    <p className="text-sm text-stone-800 leading-relaxed font-serif">
+                    <div className="bg-[#FAF8F5] p-5 rounded-2xl border border-[#E8DED2] text-xs sm:text-sm text-[#30251F] leading-relaxed font-sans">
                       {currentConcept.summary}
-                    </p>
+                    </div>
                   </div>
 
                   {/* Key Classical Attributes Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                     {currentConcept.element && (
-                      <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-100">
-                        <span className="text-[10px] text-stone-400 font-medium block">Tattva (Element)</span>
-                        <span className="font-semibold text-stone-800">{currentConcept.element}</span>
+                      <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-[#E8DED2] hover:border-[#D05C3B]/50 transition">
+                        <span className="text-[10px] text-[#30251F]/60 font-mono font-medium block uppercase tracking-wider">Tattva (Element)</span>
+                        <span className="font-serif font-bold text-[#30251F] text-xs sm:text-sm mt-1 block">{currentConcept.element}</span>
                       </div>
                     )}
                     {currentConcept.bija && (
-                      <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-100">
-                        <span className="text-[10px] text-stone-400 font-medium block">Bija Mantra</span>
-                        <span className="font-semibold text-[#c4903c] font-serif">{currentConcept.bija}</span>
+                      <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-[#E8DED2] hover:border-[#D05C3B]/50 transition">
+                        <span className="text-[10px] text-[#30251F]/60 font-mono font-medium block uppercase tracking-wider">Bija Mantra</span>
+                        <span className="font-serif font-bold text-[#D05C3B] text-xs sm:text-sm mt-1 block">{currentConcept.bija}</span>
                       </div>
                     )}
                     {currentConcept.deity && (
-                      <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-100">
-                        <span className="text-[10px] text-stone-400 font-medium block">Presiding Deity</span>
-                        <span className="font-semibold text-stone-800">{currentConcept.deity}</span>
+                      <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-[#E8DED2] hover:border-[#D05C3B]/50 transition">
+                        <span className="text-[10px] text-[#30251F]/60 font-mono font-medium block uppercase tracking-wider">Presiding Deity</span>
+                        <span className="font-serif font-bold text-[#30251F] text-xs leading-snug mt-1 block">{currentConcept.deity}</span>
                       </div>
                     )}
-                    {currentConcept.petals && (
-                      <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-100">
-                        <span className="text-[10px] text-stone-400 font-medium block">Petals / Phonemes</span>
-                        <span className="font-semibold text-stone-800">{currentConcept.petals} Petals</span>
+                    {currentConcept.petals ? (
+                      <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-[#E8DED2] hover:border-[#D05C3B]/50 transition">
+                        <span className="text-[10px] text-[#30251F]/60 font-mono font-medium block uppercase tracking-wider">Petals / Phonemes</span>
+                        <span className="font-serif font-bold text-[#30251F] text-xs sm:text-sm mt-1 block">{currentConcept.petals} Petals</span>
                       </div>
-                    )}
+                    ) : null}
                     {currentConcept.rulingPlanet && (
-                      <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-100">
-                        <span className="text-[10px] text-stone-400 font-medium block">Ruling Graha</span>
-                        <span className="font-semibold text-stone-800">{currentConcept.rulingPlanet}</span>
+                      <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-[#E8DED2] hover:border-[#D05C3B]/50 transition">
+                        <span className="text-[10px] text-[#30251F]/60 font-mono font-medium block uppercase tracking-wider">Ruling Graha</span>
+                        <span className="font-serif font-bold text-[#30251F] text-xs sm:text-sm mt-1 block">{currentConcept.rulingPlanet}</span>
                       </div>
                     )}
                     {currentConcept.ownSigns && (
-                      <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-100">
-                        <span className="text-[10px] text-stone-400 font-medium block">Own Signs</span>
-                        <span className="font-semibold text-stone-800">
+                      <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-[#E8DED2] hover:border-[#D05C3B]/50 transition">
+                        <span className="text-[10px] text-[#30251F]/60 font-mono font-medium block uppercase tracking-wider">Own Signs</span>
+                        <span className="font-serif font-bold text-[#30251F] text-xs sm:text-sm mt-1 block">
                           {Array.isArray(currentConcept.ownSigns)
                             ? currentConcept.ownSigns.join(", ")
                             : currentConcept.ownSigns}
@@ -959,95 +963,49 @@ export default function KnowledgeExplorerClient() {
                       </div>
                     )}
                     {currentConcept.exaltedIn && (
-                      <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-100">
-                        <span className="text-[10px] text-stone-400 font-medium block">Exaltation Sign</span>
-                        <span className="font-semibold text-emerald-700">{currentConcept.exaltedIn}</span>
+                      <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-[#E8DED2] hover:border-[#D05C3B]/50 transition">
+                        <span className="text-[10px] text-[#30251F]/60 font-mono font-medium block uppercase tracking-wider">Exaltation Sign</span>
+                        <span className="font-serif font-bold text-emerald-800 text-xs sm:text-sm mt-1 block">{currentConcept.exaltedIn}</span>
                       </div>
                     )}
                     {currentConcept.debilitatedIn && (
-                      <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-100">
-                        <span className="text-[10px] text-stone-400 font-medium block">Debilitation Sign</span>
-                        <span className="font-semibold text-rose-700">{currentConcept.debilitatedIn}</span>
+                      <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-[#E8DED2] hover:border-[#D05C3B]/50 transition">
+                        <span className="text-[10px] text-[#30251F]/60 font-mono font-medium block uppercase tracking-wider">Debilitation Sign</span>
+                        <span className="font-serif font-bold text-rose-800 text-xs sm:text-sm mt-1 block">{currentConcept.debilitatedIn}</span>
                       </div>
                     )}
                     {currentConcept.karaka && (
-                      <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-100">
-                        <span className="text-[10px] text-stone-400 font-medium block">Natural Karaka</span>
-                        <span className="font-semibold text-stone-800">{currentConcept.karaka}</span>
+                      <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-[#E8DED2] hover:border-[#D05C3B]/50 transition">
+                        <span className="text-[10px] text-[#30251F]/60 font-mono font-medium block uppercase tracking-wider">Natural Karaka</span>
+                        <span className="font-serif font-bold text-[#30251F] text-xs sm:text-sm mt-1 block">{currentConcept.karaka}</span>
                       </div>
                     )}
                     {currentConcept.bodyPart && (
-                      <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-100">
-                        <span className="text-[10px] text-stone-400 font-medium block">Anatomical Region</span>
-                        <span className="font-semibold text-stone-800">{currentConcept.bodyPart}</span>
+                      <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-[#E8DED2] hover:border-[#D05C3B]/50 transition">
+                        <span className="text-[10px] text-[#30251F]/60 font-mono font-medium block uppercase tracking-wider">Anatomical Region</span>
+                        <span className="font-serif font-bold text-[#30251F] text-xs sm:text-sm mt-1 block">{currentConcept.bodyPart}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Classical Shloka / Verse Box */}
-                  {currentConcept.classicalVerse && (
-                    <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-200/80 space-y-2">
-                      <div className="flex items-center justify-between text-xs font-semibold text-amber-900">
-                        <span className="flex items-center gap-1.5">
-                          <BookOpen className="w-4 h-4 text-amber-700" />
-                          Classical Verse & Textual Citation
-                        </span>
-                        <span className="text-[11px] font-mono text-amber-700">
-                          {currentConcept.classicalSource}
-                        </span>
-                      </div>
-                      {typeof currentConcept.classicalVerse === "string" ? (
-                        <p className="text-xs sm:text-sm font-serif italic text-amber-950">
-                          &ldquo;{currentConcept.classicalVerse}&rdquo;
-                        </p>
-                      ) : (
-                        <div className="space-y-1 text-xs">
-                          {currentConcept.classicalVerse.sanskrit && (
-                            <p className="font-serif font-semibold text-amber-900 text-sm">
-                              {currentConcept.classicalVerse.sanskrit}
-                            </p>
-                          )}
-                          {currentConcept.classicalVerse.translation && (
-                            <p className="text-amber-950 italic">
-                              Translation: &ldquo;{currentConcept.classicalVerse.translation}&rdquo;
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Authentic Teaching vs Misconceptions */}
-                  {currentConcept.modernMisconceptions && (
-                    <div className="p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-2 text-xs">
-                      <div className="flex items-center gap-1.5 text-stone-800 font-bold">
-                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                        <span>Classical Shastra vs. Common Misconceptions</span>
-                      </div>
-                      <p className="text-stone-700 leading-relaxed">
-                        {currentConcept.modernMisconceptions}
-                      </p>
-                    </div>
-                  )}
-
                   {/* Cross-Link Ontology: Connected Nodes */}
-                  <div className="space-y-3 pt-2 border-t border-stone-100">
+                  <div className="space-y-3 pt-5 border-t border-[#E8DED2]">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-600 flex items-center gap-1.5">
-                        <Compass className="w-4 h-4 text-[#c4903c]" />
-                        Connected Concepts & Yogic Resonances ({relatedNodes.length})
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-[#30251F] font-serif flex items-center gap-1.5">
+                        <span className="text-[#D05C3B] font-mono">@</span>
+                        <span>CONNECTED CONCEPTS &amp; YOGIC RESONANCES ({relatedNodes.length})</span>
                       </h4>
-                      <span className="text-[11px] text-stone-400">
+                      <span className="text-[11px] text-[#30251F]/60 font-sans">
                         Click any node to navigate
                       </span>
                     </div>
 
                     {relatedNodes.length === 0 ? (
-                      <p className="text-xs text-stone-400 italic">
+                      <p className="text-xs text-[#30251F]/50 italic">
                         No explicit secondary ontology nodes mapped for this concept yet.
                       </p>
                     ) : (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2.5">
                         {relatedNodes.map((rel, idx) => (
                           <button
                             key={idx}
@@ -1055,13 +1013,13 @@ export default function KnowledgeExplorerClient() {
                               setSelectedConceptKey(rel.key);
                               if (rel.category) setSelectedCategory(rel.category);
                             }}
-                            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-stone-100 hover:bg-[#13382c] hover:text-white border border-stone-200/90 transition cursor-pointer text-stone-800 shadow-2xs"
+                            className="group inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs bg-white hover:bg-[#30251F] hover:text-white border border-[#E8DED2] transition cursor-pointer text-[#30251F] shadow-xs"
                           >
-                            <span className="font-semibold">{rel.relation}:</span>
-                            <span className="font-mono text-[11px] text-[#c4903c] group-hover:text-[#f3caa1]">
+                            <span className="font-medium text-[#30251F]/80 group-hover:text-stone-200">{rel.relation}:</span>
+                            <span className="font-mono text-[11px] text-[#D05C3B] group-hover:text-[#F2B872]">
                               {rel.key}
                             </span>
-                            <ArrowRight className="w-3 h-3 text-stone-400 group-hover:text-white transition-transform group-hover:translate-x-0.5" />
+                            <span className="text-[#30251F]/40 group-hover:text-white transition-transform group-hover:translate-x-0.5">&rarr;</span>
                           </button>
                         ))}
                       </div>
@@ -1069,14 +1027,14 @@ export default function KnowledgeExplorerClient() {
                   </div>
 
                   {/* Personal Study Notes Editor */}
-                  <div className="pt-4 border-t border-stone-100 space-y-2">
+                  <div className="pt-5 border-t border-[#E8DED2] space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
-                        <MessageSquare className="w-3.5 h-3.5 text-stone-500" />
-                        <span>Personal Study & Reflection Notes</span>
+                      <label className="text-xs font-bold text-[#30251F] font-serif flex items-center gap-1.5">
+                        <MessageSquare className="w-3.5 h-3.5 text-[#D05C3B]" />
+                        <span>Personal Study &amp; Reflection Notes</span>
                       </label>
                       {noteStatus && (
-                        <span className="text-xs font-semibold text-emerald-700">
+                        <span className="text-xs font-semibold text-emerald-800">
                           {noteStatus}
                         </span>
                       )}
@@ -1086,61 +1044,119 @@ export default function KnowledgeExplorerClient() {
                       value={userNote}
                       onChange={(e) => setUserNote(e.target.value)}
                       placeholder="Write personal reflections, questions, or Sanskrit correlations..."
-                      className="w-full text-xs p-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#d4a359] bg-[#fcfaf5] text-stone-800"
+                      className="w-full text-xs sm:text-sm p-4 rounded-2xl border border-[#E8DED2] bg-white text-[#30251F] placeholder:text-[#30251F]/40 focus:outline-none focus:ring-2 focus:ring-[#D05C3B]/40 focus:border-[#D05C3B]"
                     />
                     <div className="flex justify-end">
                       <button
                         onClick={handleSaveNote}
                         disabled={savingNote}
-                        className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#13382c] text-white hover:bg-[#1b4d3d] transition cursor-pointer shadow-xs disabled:opacity-50"
+                        className="px-6 py-2.5 rounded-xl text-xs font-semibold bg-[#D05C3B] text-white hover:bg-[#bc4f30] transition cursor-pointer shadow-xs disabled:opacity-50"
                       >
                         {savingNote ? "Saving..." : "Save Note to Database"}
                       </button>
                     </div>
                   </div>
+
+                  {/* Classical Shloka & Misconceptions (Collapsible Scholarly Drawer) */}
+                  {(currentConcept.classicalVerse || currentConcept.modernMisconceptions) && (
+                    <details className="group pt-3 border-t border-[#E8DED2]">
+                      <summary className="text-xs font-semibold text-[#30251F]/70 cursor-pointer hover:text-[#30251F] flex items-center justify-between py-1.5 select-none font-sans">
+                        <span className="flex items-center gap-1.5">
+                          <BookOpen className="w-3.5 h-3.5 text-[#D05C3B]" />
+                          <span>Classical Citations &amp; Shastric Explanations</span>
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180 text-[#30251F]/50" />
+                      </summary>
+                      <div className="space-y-4 pt-3">
+                        {currentConcept.classicalVerse && (
+                          <div className="p-4 rounded-2xl bg-[#E8DED2]/30 border border-[#E8DED2] space-y-2">
+                            <div className="flex items-center justify-between text-xs font-semibold text-[#30251F]">
+                              <span className="flex items-center gap-1.5">
+                                <BookOpen className="w-4 h-4 text-[#D05C3B]" />
+                                Classical Verse &amp; Textual Citation
+                              </span>
+                              <span className="text-[11px] font-mono text-[#D05C3B]">
+                                {currentConcept.classicalSource}
+                              </span>
+                            </div>
+                            {typeof currentConcept.classicalVerse === "string" ? (
+                              <p className="text-xs sm:text-sm font-serif italic text-[#30251F]">
+                                &ldquo;{currentConcept.classicalVerse}&rdquo;
+                              </p>
+                            ) : (
+                              <div className="space-y-1 text-xs">
+                                {currentConcept.classicalVerse.sanskrit && (
+                                  <p className="font-serif font-semibold text-[#30251F] text-sm">
+                                    {currentConcept.classicalVerse.sanskrit}
+                                  </p>
+                                )}
+                                {currentConcept.classicalVerse.translation && (
+                                  <p className="text-[#30251F]/80 italic font-sans">
+                                    Translation: &ldquo;{currentConcept.classicalVerse.translation}&rdquo;
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {currentConcept.modernMisconceptions && (
+                          <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E8DED2] space-y-2 text-xs">
+                            <div className="flex items-center gap-1.5 text-[#30251F] font-bold">
+                              <ShieldCheck className="w-4 h-4 text-[#D05C3B]" />
+                              <span>Classical Shastra vs. Common Misconceptions</span>
+                            </div>
+                            <p className="text-[#30251F]/80 leading-relaxed font-sans">
+                              {currentConcept.modernMisconceptions}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </details>
+                  )}
                 </div>
               </div>
             )}
 
             {/* TAB 2: INTERACTIVE KUNDLI CHART EXPLORER */}
             {activeTab === "chart" && (
-              <div className="bg-white rounded-2xl border border-stone-200/80 shadow-xs p-6 space-y-6 animate-in fade-in duration-150">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-stone-100">
+              <div className="bg-white rounded-3xl border border-[#E8DED2] shadow-sm shadow-[#30251F]/5 p-6 sm:p-8 space-y-6 animate-in fade-in duration-150">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-[#E8DED2]">
                   <div>
-                    <h3 className="text-lg font-serif font-bold text-stone-900">
+                    <h3 className="text-xl font-serif font-bold text-[#30251F]">
                       Interactive North Indian Kundli Chart
                     </h3>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-xs text-[#30251F]/70 font-sans mt-0.5">
                       Click any House (1 to 12) or Planet (Sun, Moon, Mars, etc.) to view authentic classical shastric lessons.
                     </p>
                   </div>
                   {chartSelectionMsg && (
-                    <div className="text-xs bg-amber-50 text-amber-800 px-3 py-1.5 rounded-lg border border-amber-200 font-semibold">
+                    <div className="text-xs bg-[#E8DED2]/50 text-[#D05C3B] px-3.5 py-1.5 rounded-xl border border-[#E8DED2] font-semibold">
                       {chartSelectionMsg}
                     </div>
                   )}
                 </div>
 
                 {/* Chart and Quick Guide Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                  <div className="md:col-span-7">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                  <div className="md:col-span-7 flex justify-center">
                     <NorthIndianChart
                       chart={chart}
                       language="en"
                       onHouseClick={handleHouseClick}
                       onPlanetClick={handlePlanetClick}
-                      className="max-w-[420px]"
+                      className="max-w-[420px] w-full"
                     />
                   </div>
 
                   <div className="md:col-span-5 space-y-4 text-xs">
-                    <div className="p-4 rounded-xl bg-[#fcfaf5] border border-stone-200 space-y-2">
-                      <h4 className="font-bold text-stone-800 uppercase tracking-wider text-[11px]">
+                    <div className="p-5 rounded-2xl bg-[#FAF8F5] border border-[#E8DED2] space-y-2.5">
+                      <h4 className="font-bold text-[#30251F] uppercase tracking-wider text-[11px] font-mono">
                         Educational Chart Coordinates
                       </h4>
-                      <div className="space-y-1 text-stone-600">
+                      <div className="space-y-1.5 text-[#30251F]/80">
                         <p>
-                          <strong>Lagna (Ascendant):</strong> {chart.ascendant.sign.name} ({chart.ascendant.degree}°) - Nakshatra: {chart.ascendant.nakshatra} (Pada {chart.ascendant.pada})
+                          <strong>Lagna (Ascendant):</strong> {chart.ascendant.sign.name} ({chart.ascendant.degree}°) • Nakshatra: {chart.ascendant.nakshatra} (Pada {chart.ascendant.pada})
                         </p>
                         <p>
                           <strong>Tanu Bhava (1st House):</strong> Mars in Aries (Own Sign)
@@ -1154,26 +1170,26 @@ export default function KnowledgeExplorerClient() {
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-2">
-                      <h4 className="font-bold text-amber-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                        <Info className="w-3.5 h-3.5 text-amber-700" />
-                        How Kundli Connects to Chakras
+                    <div className="p-5 rounded-2xl bg-[#E8DED2]/30 border border-[#E8DED2] space-y-2">
+                      <h4 className="font-bold text-[#30251F] uppercase tracking-wider text-[11px] font-mono flex items-center gap-1.5">
+                        <Info className="w-3.5 h-3.5 text-[#D05C3B]" />
+                        <span>How Kundli Connects to Chakras</span>
                       </h4>
-                      <p className="text-stone-700 leading-relaxed">
+                      <p className="text-[#30251F]/80 leading-relaxed font-sans">
                         In classical Yogic Jyotisha, the Sun (10th/1st House) illuminates the Manipura fire center; the Moon in the 4th House (Matru Bhava) governs the heart-water balance (Anahata/Svadhisthana); Saturn in the 11th cultivates Muladhara grounding.
                       </p>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-3 pt-1">
                       <button
                         onClick={() => handleHouseClick(1)}
-                        className="flex-1 py-2 px-3 rounded-lg text-center font-semibold bg-stone-100 hover:bg-stone-200 text-stone-800 transition cursor-pointer"
+                        className="flex-1 py-2.5 px-4 rounded-xl text-center font-semibold bg-white hover:bg-[#FAF8F5] text-[#30251F] border border-[#E8DED2] transition cursor-pointer text-xs"
                       >
                         Explore 1st House
                       </button>
                       <button
                         onClick={() => handlePlanetClick("Sun")}
-                        className="flex-1 py-2 px-3 rounded-lg text-center font-semibold bg-[#13382c] text-white hover:bg-[#1b4d3d] transition cursor-pointer"
+                        className="flex-1 py-2.5 px-4 rounded-xl text-center font-semibold bg-[#D05C3B] text-white hover:bg-[#bc4f30] transition cursor-pointer text-xs shadow-xs"
                       >
                         Explore Sun Graha
                       </button>
@@ -1185,25 +1201,25 @@ export default function KnowledgeExplorerClient() {
 
             {/* TAB 3: INTEGRATED AI SHASTRA ASSISTANT (RAG GROUNDED) */}
             {activeTab === "ai" && (
-              <div className="bg-white rounded-2xl border border-stone-200/80 shadow-xs p-6 space-y-6 animate-in fade-in duration-150">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-stone-100">
+              <div className="bg-white rounded-3xl border border-[#E8DED2] shadow-sm shadow-[#30251F]/5 p-6 sm:p-8 space-y-6 animate-in fade-in duration-150">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-[#E8DED2]">
                   <div>
-                    <h3 className="text-lg font-serif font-bold text-stone-900 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-[#c4903c]" />
-                      Grounded AI Shastra Assistant
+                    <h3 className="text-xl font-serif font-bold text-[#30251F] flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#D05C3B]" />
+                      <span>Grounded AI Shastra Assistant</span>
                     </h3>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-xs text-[#30251F]/70 font-sans mt-0.5">
                       Grounded in classical Sanskrit texts with verified book titles, chapters, and source pages.
                     </p>
                   </div>
-                  <span className="text-[11px] bg-stone-100 text-stone-600 px-2.5 py-1 rounded-full font-mono">
+                  <span className="text-[11px] bg-[#E8DED2]/60 text-[#30251F] px-3 py-1 rounded-full font-mono font-medium">
                     Topic: {currentConcept.name}
                   </span>
                 </div>
 
                 {/* Suggested prompt chips */}
                 <div className="space-y-2">
-                  <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
+                  <span className="text-[11px] font-bold text-[#30251F]/60 uppercase tracking-wider block font-mono">
                     Suggested Shastric Inquiries
                   </span>
                   <div className="flex flex-wrap gap-2 text-xs">
@@ -1213,9 +1229,9 @@ export default function KnowledgeExplorerClient() {
                           `What do classical treatises (BPHS, Shat-Chakra-Nirupana) state regarding ${currentConcept.name}?`
                         )
                       }
-                      className="px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-[#13382c] hover:text-white transition cursor-pointer text-stone-700"
+                      className="px-3.5 py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#30251F] hover:text-white border border-[#E8DED2] transition cursor-pointer text-[#30251F] font-medium"
                     >
-                      Classical treaties & citations
+                      Classical treatises &amp; citations
                     </button>
                     <button
                       onClick={() =>
@@ -1223,9 +1239,9 @@ export default function KnowledgeExplorerClient() {
                           `How does ${currentConcept.name} resonate with subtle body chakras, tattvas, and nadis?`
                         )
                       }
-                      className="px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-[#13382c] hover:text-white transition cursor-pointer text-stone-700"
+                      className="px-3.5 py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#30251F] hover:text-white border border-[#E8DED2] transition cursor-pointer text-[#30251F] font-medium"
                     >
-                      Subtle anatomy & chakra resonance
+                      Subtle anatomy &amp; chakra resonance
                     </button>
                     <button
                       onClick={() =>
@@ -1233,7 +1249,7 @@ export default function KnowledgeExplorerClient() {
                           `What are the authentic, non-fatalistic remedies and common misconceptions regarding ${currentConcept.name}?`
                         )
                       }
-                      className="px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-[#13382c] hover:text-white transition cursor-pointer text-stone-700"
+                      className="px-3.5 py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#30251F] hover:text-white border border-[#E8DED2] transition cursor-pointer text-[#30251F] font-medium"
                     >
                       Authentic remedies vs misconceptions
                     </button>
@@ -1243,10 +1259,10 @@ export default function KnowledgeExplorerClient() {
                 {/* Message Log */}
                 <div className="space-y-4 min-h-[250px] max-h-[460px] overflow-y-auto pr-1">
                   {aiMessages.length === 0 ? (
-                    <div className="text-center py-12 text-stone-400 text-xs space-y-2">
-                      <BookOpen className="w-8 h-8 text-stone-300 mx-auto" />
+                    <div className="text-center py-12 text-[#30251F]/50 text-xs space-y-2">
+                      <BookOpen className="w-8 h-8 text-[#D05C3B]/40 mx-auto" />
                       <p>No queries yet. Select an inquiry chip above or ask any question below.</p>
-                      <p className="text-[11px] text-stone-400">
+                      <p className="text-[11px] text-[#30251F]/40 font-mono">
                         Answers will cite verified digital library manuscripts.
                       </p>
                     </div>
@@ -1254,39 +1270,39 @@ export default function KnowledgeExplorerClient() {
                     aiMessages.map((msg, idx) => (
                       <div
                         key={idx}
-                        className={`p-4 rounded-xl text-xs space-y-3 ${
+                        className={`p-5 rounded-2xl text-xs space-y-3 ${
                           msg.role === "user"
-                            ? "bg-[#13382c] text-white ml-8"
-                            : "bg-[#fcfaf5] text-stone-900 mr-8 border border-stone-200"
+                            ? "bg-[#30251F] text-[#F7F5F0] ml-8"
+                            : "bg-[#FAF8F5] text-[#30251F] mr-8 border border-[#E8DED2]"
                         }`}
                       >
-                        <div className="flex items-center justify-between text-[11px] font-semibold opacity-80">
+                        <div className="flex items-center justify-between text-[11px] font-semibold opacity-80 font-mono">
                           <span>{msg.role === "user" ? "You" : "Gurukul AI Shastra Assistant"}</span>
                         </div>
-                        <div className="prose prose-stone text-xs max-w-none leading-relaxed whitespace-pre-line">
+                        <div className="prose prose-stone text-xs max-w-none leading-relaxed whitespace-pre-line font-sans">
                           {msg.content}
                         </div>
 
                         {/* AISources Citation Cards */}
                         {msg.sources && msg.sources.length > 0 && (
-                          <div className="pt-2 border-t border-stone-200/80 space-y-1.5">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block">
+                          <div className="pt-3 border-t border-[#E8DED2] space-y-2">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#30251F]/60 block font-mono">
                               Verified Shastric Sources Cited ({msg.sources.length}):
                             </span>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                               {msg.sources.map((s, sIdx) => (
                                 <div
                                   key={sIdx}
-                                  className="p-2 rounded bg-white border border-stone-200 text-[11px] space-y-0.5"
+                                  className="p-3 rounded-xl bg-white border border-[#E8DED2] text-[11px] space-y-1"
                                 >
-                                  <p className="font-bold text-stone-800 truncate">{s.bookTitle}</p>
-                                  <p className="text-stone-500">
-                                    Chapter: {s.chapterTitle || "General"} | Page {s.sourcePage || "N/A"}
+                                  <p className="font-bold text-[#30251F] truncate font-serif">{s.bookTitle}</p>
+                                  <p className="text-[#30251F]/70 text-[10px]">
+                                    Chapter: {s.chapterTitle || "General"} • Page {s.sourcePage || "N/A"}
                                   </p>
                                   {s.readerUrl && (
                                     <Link
                                       href={s.readerUrl}
-                                      className="text-[#c4903c] hover:underline inline-flex items-center gap-1 font-semibold pt-0.5"
+                                      className="text-[#D05C3B] hover:underline inline-flex items-center gap-1 font-semibold pt-0.5 text-[11px]"
                                     >
                                       <span>Read in Library</span>
                                       <ExternalLink className="w-2.5 h-2.5" />
@@ -1302,8 +1318,8 @@ export default function KnowledgeExplorerClient() {
                   )}
 
                   {aiLoading && (
-                    <div className="p-4 rounded-xl bg-stone-50 text-stone-600 text-xs flex items-center gap-2 animate-pulse">
-                      <RefreshCw className="w-4 h-4 animate-spin text-[#c4903c]" />
+                    <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E8DED2] text-[#30251F]/70 text-xs flex items-center gap-2 animate-pulse">
+                      <RefreshCw className="w-4 h-4 animate-spin text-[#D05C3B]" />
                       <span>Retrieving authentic shastric passages and synthesizing grounded interpretation...</span>
                     </div>
                   )}
@@ -1315,19 +1331,19 @@ export default function KnowledgeExplorerClient() {
                     e.preventDefault();
                     handleAskAi();
                   }}
-                  className="flex items-center gap-2 pt-2 border-t border-stone-100"
+                  className="flex items-center gap-2 pt-3 border-t border-[#E8DED2]"
                 >
                   <input
                     type="text"
                     value={aiQuery}
                     onChange={(e) => setAiQuery(e.target.value)}
                     placeholder={`Ask about ${currentConcept.name} in classical texts...`}
-                    className="flex-1 bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#d4a359]"
+                    className="flex-1 bg-white border border-[#E8DED2] rounded-2xl px-4 py-3 text-xs text-[#30251F] placeholder:text-[#30251F]/40 focus:outline-none focus:ring-2 focus:ring-[#D05C3B]/40 focus:border-[#D05C3B]"
                   />
                   <button
                     type="submit"
                     disabled={aiLoading || !aiQuery.trim()}
-                    className="px-4 py-2.5 bg-[#13382c] text-white rounded-xl text-xs font-semibold hover:bg-[#1b4d3d] transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    className="px-5 py-3 bg-[#D05C3B] text-white rounded-2xl text-xs font-semibold hover:bg-[#bc4f30] transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shadow-xs"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>Ask</span>
@@ -1335,7 +1351,7 @@ export default function KnowledgeExplorerClient() {
                 </form>
 
                 {/* Ethical Disclaimer */}
-                <p className="text-[10px] text-stone-400 italic text-center">
+                <p className="text-[10px] text-[#30251F]/50 italic text-center font-sans">
                   * Gurukul AI explanations are source-grounded educational tools. Content is non-fatalistic and does not replace medical, psychiatric, or legal counsel.
                 </p>
               </div>

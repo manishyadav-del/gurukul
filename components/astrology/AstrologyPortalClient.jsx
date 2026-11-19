@@ -56,6 +56,7 @@ import {
   RASHI_NAMES_HI,
 } from "./kundliExplanations";
 import { formatDate } from "@/lib/utils";
+import PlaceAutocompleteInput from "./PlaceAutocompleteInput";
 import {
   WORLD_CITIES,
   formatTzOffset,
@@ -454,13 +455,21 @@ export default function AstrologyPortalClient() {
                       <label className="text-[10px] uppercase tracking-wider font-bold text-stone-500 block mb-1">
                         Place Name (City, Town, Village, Country)
                       </label>
-                      <input
-                        type="text"
-                        required
+                      <PlaceAutocompleteInput
                         value={customPlaceName}
-                        onChange={(e) => setCustomPlaceName(e.target.value)}
+                        onChange={(val) => setCustomPlaceName(val)}
+                        onSelectLocation={(loc) => {
+                          setCustomPlaceName(loc.name);
+                          setCustomLat(String(loc.lat));
+                          setCustomLon(String(loc.lon));
+                          setCustomTz(
+                            loc.tzStr ||
+                              (typeof loc.tz === "number"
+                                ? formatTzOffset(loc.tz)
+                                : String(loc.tz || "+05:30"))
+                          );
+                        }}
                         placeholder="e.g. Tokyo, Japan / Ayodhya, India / Paris, France"
-                        className="w-full bg-white border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 focus:outline-hidden focus:border-amber-500"
                       />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

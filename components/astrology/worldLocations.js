@@ -856,12 +856,204 @@ export function filterByFirstLetter(items, query) {
 }
 
 /**
+ * Comprehensive Hindi / Devanagari mapping for Sacred Shrines, Indian Metros, and Global Cities.
+ * Enables instant Hindi search for queries like "अयोध्या", "टोक्यो", "वाराणसी", "काशी", etc.
+ */
+export const HINDI_LOCATION_MAP = {
+  // Sacred Tirthas & Shrines
+  "अयोध्या": "Ayodhya",
+  "वाराणसी": "Varanasi",
+  "काशी": "Varanasi",
+  "बनारस": "Varanasi",
+  "मथुरा": "Mathura",
+  "वृन्दावन": "Vrindavan",
+  "वृंदावन": "Vrindavan",
+  "हरिद्वार": "Haridwar",
+  "ऋषिकेश": "Rishikesh",
+  "उज्जैन": "Ujjain",
+  "प्रयागराज": "Prayagraj",
+  "इलाहाबाद": "Prayagraj",
+  "चित्रकूट": "Chitrakoot",
+  "नैमिषारण्य": "Naimisharanya",
+  "विंध्याचल": "Vindhyachal",
+  "मिर्जापुर": "Mirzapur",
+  "बद्रीनाथ": "Badrinath",
+  "केदारनाथ": "Kedarnath",
+  "गंगोत्री": "Gangotri",
+  "यमुनोत्री": "Yamunotri",
+  "ओंकारेश्वर": "Omkareshwar",
+  "सोमनाथ": "Somnath",
+  "द्वारका": "Dwarka",
+  "रामेश्वरम": "Rameswaram",
+  "जगन्नाथ पुरी": "Puri",
+  "पुरी": "Puri",
+  "तिरुपति": "Tirupati",
+  "शिरडी": "Shirdi",
+  "त्र्यंबकेश्वर": "Trimbakeshwar",
+  "त्रयंबकेश्वर": "Trimbakeshwar",
+  "भीमाशंकर": "Bhimashankar",
+  "घृष्णेश्वर": "Grishneshwar",
+  "मल्लिकार्जुन": "Mallikarjuna",
+  "महाकालेश्वर": "Ujjain",
+  "वैद्यनाथ": "Deoghar",
+  "देवघर": "Deoghar",
+  "नागेश्वर": "Nageshwar",
+  "बोधगया": "Bodh Gaya",
+  "गया": "Gaya",
+  "अमृतसर": "Amritsar",
+  "कामाख्या": "Kamakhya",
+  "गुवाहाटी": "Guwahati",
+  "वैष्णो देवी": "Katra",
+  "कटरा": "Katra",
+  "अमरनाथ": "Pahalgam",
+  "पुष्कर": "Pushkar",
+  "अजमेर": "Ajmer",
+  "सबरीमाला": "Sabarimala",
+  "हम्पी": "Hampi",
+  "गोकर्ण": "Gokarna",
+  "उडुपी": "Udupi",
+  "श्रृंगेरी": "Sringeri",
+  "तंजावुर": "Thanjavur",
+  "कांचीपुरम": "Kanchipuram",
+  "मदुरै": "Madurai",
+  "कन्याकुमारी": "Kanyakumari",
+  "कुंभकोणम": "Kumbakonam",
+  "कुरुक्षेत्र": "Kurukshetra",
+
+  // Major Indian Cities & Metros
+  "दिल्ली": "Delhi",
+  "नई दिल्ली": "New Delhi",
+  "मुंबई": "Mumbai",
+  "बम्बई": "Mumbai",
+  "कोलकाता": "Kolkata",
+  "कलकत्ता": "Kolkata",
+  "चेन्नई": "Chennai",
+  "मद्रास": "Chennai",
+  "बेंगलुरु": "Bengaluru",
+  "बैंगलोर": "Bengaluru",
+  "हैदराबाद": "Hyderabad",
+  "अहमदाबाद": "Ahmedabad",
+  "पुणे": "Pune",
+  "सूरत": "Surat",
+  "जयपुर": "Jaipur",
+  "लखनऊ": "Lucknow",
+  "कानपुर": "Kanpur",
+  "नागपुर": "Nagpur",
+  "इंदौर": "Indore",
+  "भोपाल": "Bhopal",
+  "पटना": "Patna",
+  "वडोदरा": "Vadodara",
+  "गाजियाबाद": "Ghaziabad",
+  "लुधियाना": "Ludhiana",
+  "आगरा": "Agra",
+  "नासिक": "Nashik",
+  "फरीदाबाद": "Faridabad",
+  "मेरठ": "Meerut",
+  "राजकोट": "Rajkot",
+  "श्रीनगर": "Srinagar",
+  "जबलपुर": "Jabalpur",
+  "ग्वालियर": "Gwalior",
+  "विजयवाड़ा": "Vijayawada",
+  "जोधपुर": "Jodhpur",
+  "रायपुर": "Raipur",
+  "कोटा": "Kota",
+  "चंडीगढ़": "Chandigarh",
+  "देहरादून": "Dehradun",
+  "नोएडा": "Noida",
+  "गोरखपुर": "Gorakhpur",
+  "झांसी": "Jhansi",
+  "बरेली": "Bareilly",
+  "अलीगढ़": "Aligarh",
+  "मुरादाबाद": "Moradabad",
+  "सहारनपुर": "Saharanpur",
+  "मैसूर": "Mysuru",
+  "उदयपुर": "Udaipur",
+  "धनबाद": "Dhanbad",
+  "रांची": "Ranchi",
+  "शिमला": "Shimla",
+
+  // Global Mega-Cities
+  "टोक्यो": "Tokyo",
+  "क्योटो": "Kyoto",
+  "ओसाका": "Osaka",
+  "काठमांडू": "Kathmandu",
+  "पोखरा": "Pokhara",
+  "जनकपुर": "Janakpur",
+  "लुंबिनी": "Lumbini",
+  "लंदन": "London",
+  "पेरिस": "Paris",
+  "न्यूयॉर्क": "New York",
+  "दुबई": "Dubai",
+  "अबू धाबी": "Abu Dhabi",
+  "सिंगापुर": "Singapore",
+  "कुआलालंपुर": "Kuala Lumpur",
+  "सिडनी": "Sydney",
+  "मेलबर्न": "Melbourne",
+  "टोरंटो": "Toronto",
+  "वैंकूवर": "Vancouver",
+  "सैन फ्रांसिस्को": "San Francisco",
+  "लॉस एंजिल्स": "Los Angeles",
+  "शिकागो": "Chicago",
+  "बर्लिन": "Berlin",
+  "मास्को": "Moscow",
+  "बैंकॉक": "Bangkok",
+  "कोलंबो": "Colombo",
+  "ढाका": "Dhaka",
+
+  // Countries & States
+  "भारत": "India",
+  "जापान": "Japan",
+  "नेपाल": "Nepal",
+  "अमेरिका": "USA",
+  "यूके": "UK",
+  "इंग्लैंड": "UK",
+  "ब्रिटेन": "UK",
+  "कनाडा": "Canada",
+  "ऑस्ट्रेलिया": "Australia",
+  "जर्मनी": "Germany",
+  "फ्रांस": "France",
+  "यूएई": "UAE",
+  "रूस": "Russia",
+  "उत्तर प्रदेश": "Uttar Pradesh",
+  "उत्तराखंड": "Uttarakhand",
+  "मध्य प्रदेश": "Madhya Pradesh",
+  "महाराष्ट्र": "Maharashtra",
+  "गुजरात": "Gujarat",
+  "राजस्थान": "Rajasthan",
+  "बिहार": "Bihar",
+};
+
+/**
  * Unified Search across all Countries, States, and Towns in the database.
+ * Supports both English and Hindi/Devanagari queries (e.g. "अयोध्या", "Tokyo", "वाराणसी").
  * Returns array of matches with full hierarchical details and auto-calculated coordinates.
  */
 export function searchAllLocations(query, maxResults = 25) {
   if (!query || query.trim().length === 0) return [];
-  const q = query.trim().toLowerCase();
+  const rawQuery = query.trim();
+  const q = rawQuery.toLowerCase();
+
+  // Check for Devanagari Hindi characters
+  const hasDevanagari = /[\u0900-\u097F]/.test(rawQuery);
+  let translatedTerms = [];
+
+  if (hasDevanagari) {
+    // 1. Direct match in HINDI_LOCATION_MAP
+    if (HINDI_LOCATION_MAP[rawQuery]) {
+      translatedTerms.push(HINDI_LOCATION_MAP[rawQuery].toLowerCase());
+    }
+    // 2. Substring replacements
+    let replaced = rawQuery;
+    for (const [hi, en] of Object.entries(HINDI_LOCATION_MAP)) {
+      if (rawQuery.includes(hi)) {
+        translatedTerms.push(en.toLowerCase());
+        replaced = replaced.replace(new RegExp(hi, "g"), en);
+      }
+    }
+    if (replaced !== rawQuery) {
+      translatedTerms.push(replaced.toLowerCase().trim());
+    }
+  }
 
   const results = [];
 
@@ -874,14 +1066,33 @@ export function searchAllLocations(query, maxResults = 25) {
         const townName = town.name.toLowerCase();
         const stateLower = stateName.toLowerCase();
         const countryLower = countryName.toLowerCase();
+        const fullHierarchyLower = `${townName}, ${stateLower}, ${countryLower}`;
 
         let score = -1;
-        // Exact prefix match on town name gets highest score
+
+        // Check English query
         if (townName.startsWith(q)) score = 100;
         else if (townName.includes(q)) score = 70;
         else if (stateLower.startsWith(q)) score = 50;
         else if (countryLower.startsWith(q)) score = 30;
-        else if (`${townName}, ${stateLower}, ${countryLower}`.includes(q)) score = 20;
+        else if (fullHierarchyLower.includes(q)) score = 20;
+
+        // Check Translated Hindi terms if applicable
+        if (score < 100 && translatedTerms.length > 0) {
+          for (const term of translatedTerms) {
+            if (townName.startsWith(term)) {
+              score = Math.max(score, 100);
+            } else if (townName.includes(term)) {
+              score = Math.max(score, 85);
+            } else if (stateLower.startsWith(term)) {
+              score = Math.max(score, 60);
+            } else if (countryLower.startsWith(term)) {
+              score = Math.max(score, 40);
+            } else if (fullHierarchyLower.includes(term)) {
+              score = Math.max(score, 30);
+            }
+          }
+        }
 
         if (score > 0) {
           results.push({

@@ -27,7 +27,7 @@ export default function PalmLeafCard({ book, onOpenDetails = null }) {
           )}
         </div>
 
-        <h3 className="font-serif font-bold text-sm sm:text-base text-stone-900 group-hover:text-[#13382c] line-clamp-1 transition-colors">
+        <h3 className="font-serif font-bold text-sm sm:text-base text-stone-900 group-hover:text-[#D05C3B] line-clamp-1 transition-colors">
           {book.title}
         </h3>
 
@@ -44,14 +44,14 @@ export default function PalmLeafCard({ book, onOpenDetails = null }) {
         {onOpenDetails ? (
           <button
             onClick={() => onOpenDetails(book)}
-            className="text-xs font-bold text-[#7a4e1d] hover:text-[#13382c] underline transition-colors cursor-pointer min-h-[44px] inline-flex items-center"
+            className="text-xs font-bold text-[#7a4e1d] hover:text-[#D05C3B] underline transition-colors cursor-pointer min-h-[44px] inline-flex items-center"
           >
             Manuscript Dossier
           </button>
         ) : (
           <Link
             href={detailHref}
-            className="text-xs font-bold text-[#7a4e1d] hover:text-[#13382c] underline transition-colors min-h-[44px] inline-flex items-center"
+            className="text-xs font-bold text-[#7a4e1d] hover:text-[#D05C3B] underline transition-colors min-h-[44px] inline-flex items-center"
           >
             Manuscript Dossier
           </Link>
@@ -59,9 +59,9 @@ export default function PalmLeafCard({ book, onOpenDetails = null }) {
 
         <Link
           href={readerHref}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#13382c] hover:bg-[#1a4a3b] text-white text-xs font-semibold shadow-xs transition min-h-[44px]"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#30251F] hover:bg-[#D05C3B] text-white text-xs font-semibold shadow-xs transition min-h-[44px]"
         >
-          <BookOpen className="w-4 h-4 text-[#d4a359]" />
+          <BookOpen className="w-4 h-4 text-[#F2B872]" />
           <span>Read Manuscript</span>
         </Link>
       </div>

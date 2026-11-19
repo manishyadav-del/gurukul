@@ -34,6 +34,12 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import LibraryHero from "./LibraryHero.jsx";
+import AncientShastraCollections from "./AncientShastraCollections.jsx";
+import BrowseByKnowledgeCategory from "./BrowseByKnowledgeCategory.jsx";
+import RecommendedForYouSection from "./RecommendedForYouSection.jsx";
+import LibraryKnowledgeDiscovery from "./LibraryKnowledgeDiscovery.jsx";
+import SubjectBasedCollections from "./SubjectBasedCollections.jsx";
+import FeaturedClassicalLiterature from "./FeaturedClassicalLiterature.jsx";
 import EditorialShelf from "./EditorialShelf.jsx";
 import BookPresentation3D from "./BookPresentation3D.jsx";
 import PalmLeafCard from "./PalmLeafCard.jsx";
@@ -55,11 +61,12 @@ function inferBookCategory(book) {
     text.includes("jataka") ||
     text.includes("parashara") ||
     text.includes("saravali") ||
+    text.includes("phaladeepika") ||
     text.includes("ग्रह") ||
     text.includes("भाव") ||
     text.includes("कुण्डली")
   ) {
-    return "Astrology";
+    return "Jyotisha";
   }
 
   if (
@@ -86,20 +93,37 @@ function inferBookCategory(book) {
     return "Vedas";
   }
 
+  if (text.includes("upanishad") || text.includes("उपनिषद")) {
+    return "Upanishads";
+  }
+
+  if (text.includes("yoga") || text.includes("योग") || text.includes("sutra")) {
+    return "Yoga";
+  }
+
+  if (text.includes("sanskrit") || text.includes("grammar") || text.includes("व्याकरण")) {
+    return "Sanskrit";
+  }
+
+  if (text.includes("numerology") || text.includes("अंक")) {
+    return "Numerology";
+  }
+
+  if (text.includes("ganita") || text.includes("math") || text.includes("science") || text.includes("गणित")) {
+    return "Vedic Science";
+  }
+
   if (
     text.includes("gita") ||
-    text.includes("upanishad") ||
     text.includes("purana") ||
-    text.includes("sutra") ||
-    text.includes("niti") ||
+    text.includes("darshana") ||
     text.includes("philosophy") ||
-    text.includes("उपनिषद") ||
     text.includes("पुराण")
   ) {
     return "Philosophy";
   }
 
-  return "Classics";
+  return "Shastra";
 }
 
 /**
@@ -122,7 +146,7 @@ function RecommendationShelf({ title, icon: Icon, books = [], badge = "Recommend
         {books.map((item, idx) => (
           <div
             key={item.id || idx}
-            className="bg-white rounded-2xl border border-[#ede5d6] p-4 shadow-2xs hover:shadow-md transition flex flex-col justify-between group"
+            className="bg-white rounded-2xl border border-[#E8DED2] p-4 shadow-2xs hover:shadow-md transition flex flex-col justify-between group"
           >
             <div className="flex gap-3.5 items-start">
               <div
@@ -137,7 +161,7 @@ function RecommendationShelf({ title, icon: Icon, books = [], badge = "Recommend
                 </span>
                 <h3
                   onClick={() => onInfo(item)}
-                  className="font-serif font-bold text-sm text-stone-900 group-hover:text-[#13382c] line-clamp-2 cursor-pointer"
+                  className="font-serif font-bold text-sm text-stone-900 group-hover:text-[#D05C3B] line-clamp-2 cursor-pointer"
                 >
                   {item.title}
                 </h3>
@@ -163,7 +187,7 @@ function RecommendationShelf({ title, icon: Icon, books = [], badge = "Recommend
               </button>
               <Link
                 href={item.readerUrl || `/library/${item.slug || item.bookId || item.id}/pdf`}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-white bg-[#13382c] hover:bg-[#1a4a3b] px-3 py-1.5 rounded-lg shadow-xs transition"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-white bg-[#D05C3B] hover:bg-[#bc4f30] px-3 py-1.5 rounded-lg shadow-xs transition"
               >
                 <BookOpen className="w-3.5 h-3.5" />
                 <span>Read</span>
@@ -376,22 +400,27 @@ export default function DigitalLibraryView({
   }, [deepSearchEnabled, searchQuery]);
 
   const sidebarNav = [
-    { id: "all-books", label: "All Books", icon: BookOpen },
+    { id: "all-books", label: "All Manuscripts", icon: BookOpen },
     { id: "recommended", label: "Recommended for You", icon: Sparkles },
     { id: "continue-reading", label: "Continue Reading", icon: Clock },
-    { id: "featured", label: "Featured Shastras", icon: Flame },
+    { id: "featured", label: "Featured Canons", icon: Flame },
     { id: "astrology", label: "Jyotish & Astrology", icon: Compass },
     { id: "ayurveda", label: "Ayurveda & Health", icon: Layers },
-    { id: "philosophy", label: "Philosophy & Vedas", icon: Sparkles },
+    { id: "philosophy", label: "Philosophy & Darshana", icon: Sparkles },
   ];
 
   const categories = [
     "All",
-    "Astrology",
-    "Ayurveda",
-    "Philosophy",
+    "Jyotisha",
+    "Shastra",
     "Vedas",
-    "Classics",
+    "Upanishads",
+    "Sanskrit",
+    "Philosophy",
+    "Yoga",
+    "Ayurveda",
+    "Numerology",
+    "Vedic Science",
   ];
 
   const languages = ["All", "Sanskrit", "Hindi", "English"];
@@ -465,9 +494,9 @@ export default function DigitalLibraryView({
     return processedBooks
       .filter((book) => {
         // Sidebar quick category filtering
-        if (selectedSidebar === "astrology" && book.category !== "Astrology") return false;
+        if (selectedSidebar === "astrology" && !["Jyotisha", "Astrology"].includes(book.category)) return false;
         if (selectedSidebar === "ayurveda" && book.category !== "Ayurveda") return false;
-        if (selectedSidebar === "philosophy" && !["Philosophy", "Vedas"].includes(book.category)) return false;
+        if (selectedSidebar === "philosophy" && !["Philosophy", "Vedas", "Upanishads", "Yoga"].includes(book.category)) return false;
         if (selectedSidebar === "featured") {
           const isFeatured = (book.pageCount && book.pageCount >= 3) || (book.author && book.author !== "Unknown");
           if (!isFeatured) return false;
@@ -557,9 +586,9 @@ export default function DigitalLibraryView({
   };
 
   return (
-    <div className="bg-[#faf6ef] min-h-screen py-6 sm:py-8 text-stone-900">
+    <div className="bg-[#F7F5F0] min-h-screen py-6 sm:py-8 text-[#30251F]">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Immersive Library Hero (Shown when in all-books and no active search query) */}
+        {/* 1. Immersive Library Hero (Shown when in all-books and no active search query) */}
         {primaryFeaturedBook && selectedSidebar === "all-books" && !searchQuery.trim() ? (
           <LibraryHero
             featuredBook={primaryFeaturedBook}
@@ -567,15 +596,15 @@ export default function DigitalLibraryView({
           />
         ) : (
           /* Editorial Header Banner when searching or filtering */
-          <div className="bg-gradient-to-r from-[#13382c] via-[#1a4a3b] to-[#13382c] rounded-3xl p-6 sm:p-8 text-white shadow-lg border border-[#ede5d6] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-            <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="bg-gradient-to-r from-[#241711] via-[#30251F] to-[#1c120c] rounded-3xl p-6 sm:p-8 text-[#F7F5F0] shadow-lg border border-[#E8DED2]/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-[#D05C3B]/10 rounded-full blur-3xl pointer-events-none" />
             <div className="space-y-2 max-w-2xl relative z-10">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-300/30 text-amber-200 text-xs font-medium">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D05C3B]/20 border border-[#D05C3B]/40 text-[#F2B872] text-xs font-medium">
+                <Sparkles className="w-3.5 h-3.5 text-[#F2B872]" />
                 <span>गुरुकुल डिजिटल ग्रन्थागार • Classical Vedic Library</span>
               </div>
-              <h1 className="text-2xl sm:text-4xl font-bold font-serif tracking-tight text-[#fdfbf7]">
-                Sacred Shastras & Digitized Manuscripts
+              <h1 className="text-2xl sm:text-4xl font-bold font-serif tracking-tight text-[#F7F5F0]">
+                Sacred Shastras &amp; Digitized Manuscripts
               </h1>
               <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
                 Explore {processedBooks.length} classical works ({initialBooks.length} editions) digitized with dual-layer OCR, interactive Devanagari translation, chapter navigation, and dual-page manuscript reading.
@@ -585,59 +614,86 @@ export default function DigitalLibraryView({
             <div className="flex flex-wrap items-center gap-3 relative z-10 shrink-0">
               <Link
                 href="/explore"
-                className="bg-emerald-950/80 hover:bg-emerald-900 text-amber-200 border border-amber-400/30 font-bold rounded-2xl px-4 py-3 text-center shadow-lg transition flex items-center gap-2 text-xs"
+                className="bg-white/10 hover:bg-white/15 text-white border border-white/20 font-bold rounded-2xl px-4 py-3 text-center shadow-lg transition flex items-center gap-2 text-xs"
               >
-                <Network className="w-4 h-4 text-amber-400" />
+                <Network className="w-4 h-4 text-[#F2B872]" />
                 <span>Knowledge Graph</span>
               </Link>
 
               <Link
                 href="/research"
-                className="bg-amber-400 hover:bg-amber-300 text-[#13382c] font-bold rounded-2xl px-4 py-3 text-center shadow-lg transition flex items-center gap-2 text-xs"
+                className="bg-[#D05C3B] hover:bg-[#bc4f30] text-white font-bold rounded-2xl px-4 py-3 text-center shadow-lg transition flex items-center gap-2 text-xs"
               >
-                <Sparkles className="w-4 h-4 text-[#13382c]" />
+                <Sparkles className="w-4 h-4 text-white" />
                 <span>AI Research Assistant</span>
               </Link>
             </div>
           </div>
         )}
 
-        {/* Curated Editorial Shelves: Ancient Jyotish & Palm-Leaf Manuscripts */}
+        {/* 2. Ancient Astrology & Shastra Collections (Horizontal scroll shelf) */}
         {selectedSidebar === "all-books" && !searchQuery.trim() && (
-          <div className="space-y-8">
-            {astrologyBooks.length > 0 && (
-              <EditorialShelf
-                title="Ancient Jyotisha & Astrological Shastras"
-                subtitle="Authoritative foundational texts on planetary mathematics, bhavas, and predictive horoscopy"
-                badge="Vedic Astrology"
-                books={astrologyBooks}
-                layout="3D_SCROLL"
-                onOpenDetails={setSelectedBookForInfo}
-              />
-            )}
+          <AncientShastraCollections
+            title="Ancient Astrology & Shastra Collections"
+            subtitle="Authoritative foundational classical texts on planetary mathematics, bhavas, and predictive horoscopy"
+            badge="Classical Shastras"
+            books={processedBooks}
+            onOpenDetails={setSelectedBookForInfo}
+          />
+        )}
 
-            {palmLeafBooks.length > 0 && (
-              <EditorialShelf
-                title="Sacred Palm-Leaf Granthas & Classical Treatises"
-                subtitle="Elongated talapatra manuscript editions preserved with verse authenticity"
-                badge="Palm-Leaf Manuscripts"
-                books={palmLeafBooks}
-                layout="PALM_LEAF_GRID"
-                onOpenDetails={setSelectedBookForInfo}
-              />
-            )}
-          </div>
+        {/* 3. Browse by Knowledge Category (10 subjects grid with dynamic counts & filters) */}
+        {selectedSidebar === "all-books" && !searchQuery.trim() && (
+          <BrowseByKnowledgeCategory
+            books={processedBooks}
+            selectedCategory={selectedCategory}
+            onSelectCategory={(cat) => {
+              setSelectedCategory(cat);
+              updateUrlParams({ category: cat });
+            }}
+          />
+        )}
+
+        {/* 4. Recommended for You (Personalized study recommendations) */}
+        {selectedSidebar === "all-books" && !searchQuery.trim() && (
+          <RecommendedForYouSection
+            recommendations={initialRecommendations}
+            fallbackBooks={processedBooks}
+            isAuthenticated={isAuthenticated}
+            onOpenDetails={setSelectedBookForInfo}
+          />
+        )}
+
+        {/* 5. Knowledge Discovery (Dark editorial manuscript vault) */}
+        {selectedSidebar === "all-books" && !searchQuery.trim() && (
+          <LibraryKnowledgeDiscovery />
+        )}
+
+        {/* 6. Subject-based Book Collections (Astrology, Ayurveda, Yoga & Philosophy, Vedas & Upanishads) */}
+        {selectedSidebar === "all-books" && !searchQuery.trim() && (
+          <SubjectBasedCollections
+            books={processedBooks}
+            onOpenDetails={setSelectedBookForInfo}
+          />
+        )}
+
+        {/* 7. Featured Classical Literature (Larger editorial book cards) */}
+        {featuredBooks.length > 0 && selectedSidebar === "all-books" && !searchQuery.trim() && (
+          <FeaturedClassicalLiterature
+            books={featuredBooks}
+            onOpenDetails={setSelectedBookForInfo}
+          />
         )}
 
         {/* Continue Reading Empty State when in Continue Reading sidebar */}
         {selectedSidebar === "continue-reading" && initialProgress.length === 0 && (
-          <div className="bg-white rounded-3xl border border-[#ede5d6] p-8 sm:p-12 text-center space-y-4">
-            <Clock className="w-12 h-12 mx-auto text-amber-700/60" />
+          <div className="bg-white rounded-3xl border border-[#E8DED2] p-8 sm:p-12 text-center space-y-4">
+            <Clock className="w-12 h-12 mx-auto text-[#D05C3B]/60" />
             <div className="space-y-1 max-w-md mx-auto">
-              <h3 className="text-lg font-serif font-bold text-stone-900">
+              <h3 className="text-lg font-serif font-bold text-[#30251F]">
                 No Books in Progress Yet
               </h3>
-              <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#30251F]/70 leading-relaxed">
                 {isAuthenticated
                   ? "Select any classical Shastra from the library and start reading. Your progress, bookmarks, and last-read page will automatically be tracked here."
                   : "Sign in to track your reading progress, bookmark sacred verses, and resume reading on any device."}
@@ -645,7 +701,7 @@ export default function DigitalLibraryView({
             </div>
             <button
               onClick={() => handleSelectSidebar("all-books")}
-              className="px-5 py-2.5 rounded-xl bg-[#13382c] hover:bg-[#1a4a3b] text-white text-xs font-semibold shadow-xs transition inline-flex items-center gap-2 cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-[#D05C3B] hover:bg-[#bc4f30] text-white text-xs font-semibold shadow-xs transition inline-flex items-center gap-2 cursor-pointer"
             >
               <BookOpen className="w-4 h-4" />
               <span>Browse All Manuscripts</span>
@@ -653,117 +709,17 @@ export default function DigitalLibraryView({
           </div>
         )}
 
-        {/* Intelligent Explainable Book Discovery Shelves */}
-        {initialRecommendations && (selectedSidebar === "all-books" || selectedSidebar === "recommended") && !searchQuery.trim() && (
-          <div className="space-y-6">
-            <RecommendationShelf
-              title="Recommended for You"
-              icon={Sparkles}
-              books={initialRecommendations.recommendedForYou}
-              badge="Personalized Study"
-              onInfo={setSelectedBookForInfo}
-            />
-            {selectedSidebar === "recommended" && (
-              <>
-                <RecommendationShelf
-                  title="Related to Your Reading"
-                  icon={BookOpen}
-                  books={initialRecommendations.relatedToYourReading}
-                  badge="Same Lineage & Tradition"
-                  onInfo={setSelectedBookForInfo}
-                />
-                <RecommendationShelf
-                  title="Explore Similar Scriptures"
-                  icon={Compass}
-                  books={initialRecommendations.exploreSimilarScriptures}
-                  badge="Knowledge Graph Resonance"
-                  onInfo={setSelectedBookForInfo}
-                />
-                <RecommendationShelf
-                  title="Recently Added Books"
-                  icon={Clock}
-                  books={initialRecommendations.recentlyAddedBooks}
-                  badge="New Digitations"
-                  onInfo={setSelectedBookForInfo}
-                />
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Featured Shastras Shelf (when in all-books and no active search) */}
-        {featuredBooks.length > 0 && selectedSidebar === "all-books" && !searchQuery.trim() && (
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Flame className="w-4 h-4 text-amber-600" />
-                <h2 className="text-lg font-bold font-serif text-stone-900">
-                  Featured Classical Shastras
-                </h2>
-              </div>
-              <span className="text-xs text-stone-500 font-medium">Curated Editions</span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {featuredBooks.map((book, idx) => (
-                <div
-                  key={book.id}
-                  className="bg-white rounded-2xl border border-[#ede5d6] p-4 shadow-2xs hover:shadow-md transition flex flex-col justify-between group"
-                >
-                  <div className="space-y-3">
-                    <div className="aspect-[4/3] w-full rounded-xl overflow-hidden bg-stone-900">
-                      <ManuscriptCoverCard book={book} index={idx} editionCount={book.editionCount} />
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between text-[11px] text-stone-500 mb-1">
-                        <span className="font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md">
-                          {book.category}
-                        </span>
-                        {book.pageCount && (
-                          <span className="font-mono">{book.pageCount} Pages</span>
-                        )}
-                      </div>
-                      <h3 className="font-serif font-bold text-sm text-stone-900 group-hover:text-[#13382c] line-clamp-1">
-                        {book.title}
-                      </h3>
-                      <p className="text-xs text-stone-500 line-clamp-2 mt-1">
-                        {book.description || `Author: ${book.author || "Ancient Sage"}`}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-stone-100 flex items-center justify-between mt-3">
-                    <button
-                      onClick={() => setSelectedBookForInfo(book)}
-                      className="text-xs font-semibold text-stone-600 hover:text-stone-900 cursor-pointer"
-                    >
-                      Info
-                    </button>
-                    <Link
-                      href={`/library/${book.slug || book.id}/pdf`}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#13382c] hover:bg-[#1a4a3b] text-white text-xs font-semibold shadow-xs"
-                    >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      <span>Read PDF</span>
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Mobile Navigation Toggle Button */}
-        <div className="lg:hidden flex items-center justify-between bg-white rounded-2xl p-3 border border-[#ede5d6]">
-          <span className="text-xs font-semibold text-stone-700">
-            Active: <strong className="text-[#13382c]">{sidebarNav.find((s) => s.id === selectedSidebar)?.label}</strong>
+        <div className="lg:hidden flex items-center justify-between bg-white rounded-2xl p-3 border border-[#E8DED2]">
+          <span className="text-xs font-semibold text-[#30251F]">
+            Active: <strong className="text-[#D05C3B]">{sidebarNav.find((s) => s.id === selectedSidebar)?.label}</strong>
           </span>
           <button
             onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#13382c] text-white text-xs font-semibold"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#30251F] text-white text-xs font-semibold"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Navigation & Filters</span>
+            <span>Navigation &amp; Filters</span>
           </button>
         </div>
 
@@ -775,7 +731,7 @@ export default function DigitalLibraryView({
               mobileSidebarOpen ? "block" : "hidden lg:block"
             }`}
           >
-            <div className="bg-white rounded-2xl border border-[#ede5d6] p-3 shadow-2xs space-y-1">
+            <div className="bg-white rounded-2xl border border-[#E8DED2] p-3 shadow-2xs space-y-1">
               <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400 px-3 py-1.5 block">
                 Library Sections
               </span>
@@ -788,13 +744,13 @@ export default function DigitalLibraryView({
                     onClick={() => handleSelectSidebar(item.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition text-left cursor-pointer ${
                       isActive
-                        ? "bg-[#13382c] text-white shadow-xs font-semibold"
-                        : "text-stone-700 hover:bg-[#faf7f0] hover:text-[#13382c]"
+                        ? "bg-[#30251F] text-white shadow-xs font-semibold"
+                        : "text-stone-700 hover:bg-[#F7F5F0] hover:text-[#D05C3B]"
                     }`}
                   >
                     <Icon
                       className={`w-4 h-4 ${
-                        isActive ? "text-[#d4a359]" : "text-stone-400"
+                        isActive ? "text-[#D05C3B]" : "text-stone-400"
                       }`}
                     />
                     <span>{item.label}</span>
@@ -804,9 +760,9 @@ export default function DigitalLibraryView({
             </div>
 
             {/* Quick Stats Panel */}
-            <div className="bg-[#faf7f0] rounded-2xl border border-[#ede5d6] p-4 text-xs space-y-2 text-stone-600">
-              <span className="font-semibold text-stone-800 block">Digital Manuscripts</span>
-              <p className="text-[11px] text-stone-500 leading-relaxed">
+            <div className="bg-[#F7F5F0] rounded-2xl border border-[#E8DED2] p-4 text-xs space-y-2 text-[#30251F]/80">
+              <span className="font-semibold text-[#30251F] block">Digital Manuscripts</span>
+              <p className="text-[11px] text-[#30251F]/60 leading-relaxed">
                 All books are processed directly via Gurukul&apos;s OCR pipeline preserving Sanskrit Dandās (।, ॥), Vedic accents, and original page layouts.
               </p>
             </div>
@@ -815,7 +771,7 @@ export default function DigitalLibraryView({
           {/* Main Book Listing Area */}
           <main className="lg:col-span-9 xl:col-span-10 space-y-5">
             {/* Search, Language & Sort Controls */}
-            <div className="bg-white rounded-2xl border border-[#ede5d6] p-4 shadow-2xs space-y-4">
+            <div className="bg-white rounded-2xl border border-[#E8DED2] p-4 shadow-2xs space-y-4">
               <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                 {/* Search Input Bar */}
                 <div className="relative flex-1">
@@ -825,7 +781,7 @@ export default function DigitalLibraryView({
                     value={searchInputValue}
                     onChange={(e) => setSearchInputValue(e.target.value)}
                     placeholder="Search by title, author, Sanskrit shloka term, or subject..."
-                    className="w-full bg-[#faf7f0] text-stone-900 placeholder-stone-400 text-xs sm:text-sm pl-10 pr-20 py-2.5 rounded-xl border border-[#ede5d6] focus:outline-hidden focus:ring-2 focus:ring-[#13382c]/30"
+                    className="w-full bg-[#F7F5F0] text-[#30251F] placeholder-stone-400 text-xs sm:text-sm pl-10 pr-20 py-2.5 rounded-xl border border-[#E8DED2] focus:outline-hidden focus:ring-2 focus:ring-[#D05C3B]/40"
                   />
                   {searchInputValue && (
                     <button
@@ -838,7 +794,7 @@ export default function DigitalLibraryView({
                 </div>
 
                 {/* Language Pills */}
-                <div className="inline-flex rounded-xl border border-[#ede5d6] bg-[#faf7f0] p-1 text-xs font-medium self-start sm:self-auto shrink-0">
+                <div className="inline-flex rounded-xl border border-[#E8DED2] bg-[#F7F5F0] p-1 text-xs font-medium self-start sm:self-auto shrink-0">
                   {languages.map((lang) => (
                     <button
                       key={lang}
@@ -848,7 +804,7 @@ export default function DigitalLibraryView({
                       }}
                       className={`px-3 py-1.5 rounded-lg transition cursor-pointer text-xs ${
                         selectedLanguage === lang
-                          ? "bg-[#13382c] text-white font-semibold shadow-xs"
+                          ? "bg-[#30251F] text-white font-semibold shadow-xs"
                           : "text-stone-600 hover:text-stone-900"
                       }`}
                     >
@@ -872,8 +828,8 @@ export default function DigitalLibraryView({
                         }}
                         className={`px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
                           isActive
-                            ? "bg-[#13382c] text-white font-semibold shadow-xs"
-                            : "bg-[#faf7f0] text-stone-700 hover:bg-[#ede5d6] border border-[#ede5d6]"
+                            ? "bg-[#D05C3B] text-white font-semibold shadow-xs"
+                            : "bg-[#F7F5F0] text-stone-700 hover:bg-[#E8DED2] border border-[#E8DED2]"
                         }`}
                       >
                         {cat}
@@ -894,7 +850,7 @@ export default function DigitalLibraryView({
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition cursor-pointer ${
                       deduplicateTitles
                         ? "bg-amber-50 border-amber-300 text-amber-900 font-semibold"
-                        : "bg-[#faf7f0] border-[#ede5d6] text-stone-600"
+                        : "bg-[#F7F5F0] border-[#E8DED2] text-stone-600"
                     }`}
                     title="Toggle grouping duplicate test edition entries"
                   >
@@ -907,8 +863,8 @@ export default function DigitalLibraryView({
                       onClick={() => setDeepSearchEnabled(!deepSearchEnabled)}
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition cursor-pointer ${
                         deepSearchEnabled
-                          ? "bg-[#13382c] border-[#13382c] text-white font-semibold"
-                          : "bg-[#faf7f0] border-[#ede5d6] text-stone-600"
+                          ? "bg-[#D05C3B] border-[#D05C3B] text-white font-semibold"
+                          : "bg-[#F7F5F0] border-[#E8DED2] text-stone-600"
                       }`}
                       title="Search inside extracted Devanagari text & passages"
                     >
@@ -918,12 +874,12 @@ export default function DigitalLibraryView({
                   )}
 
                   {/* Presentation Mode Selector */}
-                  <div className="inline-flex rounded-xl border border-[#ede5d6] bg-[#faf7f0] p-0.5 text-xs font-medium shrink-0">
+                  <div className="inline-flex rounded-xl border border-[#E8DED2] bg-[#F7F5F0] p-0.5 text-xs font-medium shrink-0">
                     <button
                       onClick={() => setCardPresentationStyle("3D")}
                       className={`px-2.5 py-1 rounded-lg transition cursor-pointer text-xs ${
                         cardPresentationStyle === "3D"
-                          ? "bg-[#13382c] text-white font-semibold shadow-xs"
+                          ? "bg-[#30251F] text-white font-semibold shadow-xs"
                           : "text-stone-600 hover:text-stone-900"
                       }`}
                       title="3D Physical Book Spines"
@@ -934,7 +890,7 @@ export default function DigitalLibraryView({
                       onClick={() => setCardPresentationStyle("PALM")}
                       className={`px-2.5 py-1 rounded-lg transition cursor-pointer text-xs ${
                         cardPresentationStyle === "PALM"
-                          ? "bg-[#13382c] text-white font-semibold shadow-xs"
+                          ? "bg-[#30251F] text-white font-semibold shadow-xs"
                           : "text-stone-600 hover:text-stone-900"
                       }`}
                       title="Palm-Leaf Manuscript View"
@@ -945,7 +901,7 @@ export default function DigitalLibraryView({
                       onClick={() => setCardPresentationStyle("COMPACT")}
                       className={`px-2.5 py-1 rounded-lg transition cursor-pointer text-xs ${
                         cardPresentationStyle === "COMPACT"
-                          ? "bg-[#13382c] text-white font-semibold shadow-xs"
+                          ? "bg-[#30251F] text-white font-semibold shadow-xs"
                           : "text-stone-600 hover:text-stone-900"
                       }`}
                       title="Cover Grid View"
@@ -967,7 +923,7 @@ export default function DigitalLibraryView({
                         setSortBy(val);
                         updateUrlParams({ sort: val });
                       }}
-                      className="bg-[#faf7f0] border border-[#ede5d6] rounded-lg px-2.5 py-1 text-xs text-stone-700 font-medium focus:outline-hidden cursor-pointer"
+                      className="bg-[#F7F5F0] border border-[#E8DED2] rounded-lg px-2.5 py-1 text-xs text-[#30251F] font-medium focus:outline-hidden cursor-pointer"
                     >
                       <option value="newest">Recently Added</option>
                       <option value="title">Title (A-Z)</option>
@@ -1010,7 +966,7 @@ export default function DigitalLibraryView({
 
             {/* Empty State */}
             {filteredBooks.length === 0 && (
-              <div className="bg-white rounded-2xl border border-[#ede5d6] p-12 text-center space-y-4">
+              <div className="bg-white rounded-2xl border border-[#E8DED2] p-12 text-center space-y-4">
                 <Compass className="w-12 h-12 mx-auto text-stone-400 opacity-60" />
                 <div className="space-y-1">
                   <h3 className="text-base font-serif font-bold text-stone-800">
@@ -1022,7 +978,7 @@ export default function DigitalLibraryView({
                 </div>
                 <button
                   onClick={handleResetFilters}
-                  className="px-4 py-2 bg-[#13382c] text-white rounded-xl text-xs font-semibold hover:bg-[#1a4a3b] transition inline-flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2 bg-[#D05C3B] text-white rounded-xl text-xs font-semibold hover:bg-[#bc4f30] transition inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Reset All Filters</span>
@@ -1045,7 +1001,7 @@ export default function DigitalLibraryView({
                     <div className="text-center w-full space-y-1">
                       <button
                         onClick={() => setSelectedBookForInfo(book)}
-                        className="font-serif font-bold text-xs sm:text-sm text-stone-900 hover:text-[#13382c] line-clamp-1 block w-full cursor-pointer transition-colors"
+                        className="font-serif font-bold text-xs sm:text-sm text-stone-900 hover:text-[#D05C3B] line-clamp-1 block w-full cursor-pointer transition-colors"
                         title={book.title}
                       >
                         {book.title}
@@ -1056,7 +1012,7 @@ export default function DigitalLibraryView({
                       <div className="flex items-center justify-center gap-2 pt-1 text-[11px]">
                         <Link
                           href={`/library/${book.slug || book.id}/pdf`}
-                          className="font-semibold text-[#13382c] hover:underline"
+                          className="font-semibold text-[#D05C3B] hover:underline"
                         >
                           Read
                         </Link>
@@ -1088,7 +1044,7 @@ export default function DigitalLibraryView({
                 {filteredBooks.map((book, idx) => (
                   <div
                     key={book.id}
-                    className="group flex flex-col bg-white rounded-2xl border border-[#ede5d6] p-2.5 shadow-2xs hover:shadow-md hover:border-[#d4a359] transition flex-1 justify-between"
+                    className="group flex flex-col bg-white rounded-2xl border border-[#E8DED2] p-2.5 shadow-2xs hover:shadow-md hover:border-[#D05C3B]/60 transition flex-1 justify-between"
                   >
                     <div
                       onClick={() => setSelectedBookForInfo(book)}
@@ -1111,7 +1067,7 @@ export default function DigitalLibraryView({
 
                         <button
                           onClick={() => setSelectedBookForInfo(book)}
-                          className="text-left w-full block group-hover:text-[#13382c] transition cursor-pointer min-h-[36px]"
+                          className="text-left w-full block group-hover:text-[#D05C3B] transition cursor-pointer min-h-[36px]"
                           title={book.title}
                         >
                           <h3 className="font-serif font-bold text-xs sm:text-sm text-stone-900 line-clamp-2 leading-snug">
@@ -1134,7 +1090,7 @@ export default function DigitalLibraryView({
                         </button>
                         <Link
                           href={`/library/${book.slug || book.id}/pdf`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#13382c] hover:bg-[#1a4a3b] text-white font-semibold transition shadow-2xs"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#D05C3B] hover:bg-[#bc4f30] text-white font-semibold transition shadow-2xs"
                           aria-label={`Read ${book.title}`}
                         >
                           <BookOpen className="w-3 h-3" />
